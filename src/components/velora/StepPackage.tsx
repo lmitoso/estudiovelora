@@ -5,6 +5,7 @@ import { Camera, Video, Plus, Minus } from "lucide-react";
 interface PackageData {
   photos: number;
   videos: number;
+  comboPrice?: number;
 }
 
 interface StepPackageProps {
@@ -32,12 +33,13 @@ const StepPackage = ({ data, onChange, onGenerate, onBack }: StepPackageProps) =
   const handleComboSelect = (index: number) => {
     setSelectedCombo(index);
     setUseCombo(true);
-    onChange({ photos: combos[index].photos, videos: combos[index].videos });
+    onChange({ photos: combos[index].photos, videos: combos[index].videos, comboPrice: combos[index].price });
   };
 
   const handleCustom = () => {
     setUseCombo(false);
     setSelectedCombo(null);
+    onChange({ ...data, comboPrice: undefined });
   };
 
   const total = useCombo && selectedCombo !== null ? combos[selectedCombo].price : customTotal;
