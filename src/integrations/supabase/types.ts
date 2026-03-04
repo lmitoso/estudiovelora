@@ -70,6 +70,7 @@ export type Database = {
           brand_name: string
           campaign_goal: string | null
           created_at: string
+          customer_name: string | null
           email: string
           id: string
           model_type: string
@@ -86,6 +87,7 @@ export type Database = {
           brand_name: string
           campaign_goal?: string | null
           created_at?: string
+          customer_name?: string | null
           email: string
           id?: string
           model_type?: string
@@ -102,6 +104,7 @@ export type Database = {
           brand_name?: string
           campaign_goal?: string | null
           created_at?: string
+          customer_name?: string | null
           email?: string
           id?: string
           model_type?: string
