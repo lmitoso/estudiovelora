@@ -271,15 +271,12 @@ const StepCheckout = ({ total, photos, videos, modelType, campaignData, onBack }
         <h3 className="font-display text-sm text-foreground tracking-wider uppercase">Resumo</h3>
         <div className="h-px bg-border" />
         <div className="flex justify-between text-xs font-body">
-          <span className="text-muted-foreground">{photos} foto{photos > 1 ? "s" : ""} editorial</span>
-          <span className="text-foreground">R${photos * 27}</span>
+          <span className="text-muted-foreground">
+            {photos} foto{photos > 1 ? "s" : ""} editorial
+            {videos > 0 && ` + ${videos} vídeo${videos > 1 ? "s" : ""}`}
+          </span>
+          <span className="text-foreground">R${total}</span>
         </div>
-        {videos > 0 && (
-          <div className="flex justify-between text-xs font-body">
-            <span className="text-muted-foreground">{videos} vídeo{videos > 1 ? "s" : ""}</span>
-            <span className="text-foreground">R${videos * 37}</span>
-          </div>
-        )}
         {flashAccepted && (
           <div className="flex justify-between text-xs font-body">
             <span className="text-primary">Desconto relâmpago</span>
