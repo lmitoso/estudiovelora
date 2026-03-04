@@ -14,7 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      generations: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          fal_request_id: string | null
+          id: string
+          input_image_url: string | null
+          order_id: string
+          output_url: string | null
+          prompt: string | null
+          status: string
+          type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          fal_request_id?: string | null
+          id?: string
+          input_image_url?: string | null
+          order_id: string
+          output_url?: string | null
+          prompt?: string | null
+          status?: string
+          type: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          fal_request_id?: string | null
+          id?: string
+          input_image_url?: string | null
+          order_id?: string
+          output_url?: string | null
+          prompt?: string | null
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          brand_description: string | null
+          brand_name: string
+          campaign_goal: string | null
+          created_at: string
+          email: string
+          id: string
+          model_type: string
+          photos_qty: number
+          piece_description: string | null
+          status: string
+          total_price: number
+          updated_at: string
+          videos_qty: number
+          whatsapp: string | null
+        }
+        Insert: {
+          brand_description?: string | null
+          brand_name: string
+          campaign_goal?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          model_type?: string
+          photos_qty?: number
+          piece_description?: string | null
+          status?: string
+          total_price?: number
+          updated_at?: string
+          videos_qty?: number
+          whatsapp?: string | null
+        }
+        Update: {
+          brand_description?: string | null
+          brand_name?: string
+          campaign_goal?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          model_type?: string
+          photos_qty?: number
+          piece_description?: string | null
+          status?: string
+          total_price?: number
+          updated_at?: string
+          videos_qty?: number
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
