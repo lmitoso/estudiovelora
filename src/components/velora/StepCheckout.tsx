@@ -1,12 +1,21 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Zap, CreditCard, QrCode, Star, ShieldCheck, Lock, Clock } from "lucide-react";
+import { X, Zap, Star, ShieldCheck, Lock, Clock, Instagram, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface CheckoutProps {
   total: number;
   photos: number;
   videos: number;
-  onFinish: (info: { whatsapp: string; email: string }) => void;
+  modelType: string;
+  campaignData: {
+    brandName: string;
+    brandDescription: string;
+    campaignGoal: string;
+    pieceDescription: string;
+    pieceFile: File | null;
+  };
   onBack: () => void;
 }
 
