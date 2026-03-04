@@ -142,7 +142,12 @@ const StepCheckout = ({ total, photos, videos, modelType, campaignData, onBack }
       }
 
       // Redirect to Stripe Checkout
-      window.location.href = paymentData.url;
+      const newWindow = window.open(paymentData.url, '_blank');
+      if (!newWindow) {
+        // Fallback if popup blocked
+        window.location.href = paymentData.url;
+      }
+      setLoading(false);
     } catch (err) {
       console.error("Payment error:", err);
       toast({ title: "Erro", description: "Erro ao processar pagamento.", variant: "destructive" });
