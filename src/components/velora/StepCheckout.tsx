@@ -1,12 +1,21 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Zap, CreditCard, QrCode, Star, ShieldCheck, Lock, Clock } from "lucide-react";
+import { X, Zap, Star, ShieldCheck, Lock, Clock, Instagram, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface CheckoutProps {
   total: number;
   photos: number;
   videos: number;
-  onFinish: (info: { whatsapp: string; email: string }) => void;
+  modelType: string;
+  campaignData: {
+    brandName: string;
+    brandDescription: string;
+    campaignGoal: string;
+    pieceDescription: string;
+    pieceFile: File | null;
+  };
   onBack: () => void;
 }
 
@@ -34,17 +43,14 @@ const TESTIMONIALS = [
   },
 ];
 
-const StepCheckout = ({ total, photos, videos, onFinish, onBack }: CheckoutProps) => {
+const StepCheckout = ({ total, photos, videos, modelType, campaignData, onBack }: CheckoutProps) => {
   const [name, setName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [email, setEmail] = useState("");
-  const [payMethod, setPayMethod] = useState<"pix" | "card">("pix");
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvv, setCardCvv] = useState("");
   const [showFlash, setShowFlash] = useState(true);
   const [flashAccepted, setFlashAccepted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(FLASH_DURATION);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!showFlash && !flashAccepted) return;
@@ -69,8 +75,80 @@ const StepCheckout = ({ total, photos, videos, onFinish, onBack }: CheckoutProps
   const canFinish =
     name.trim().length >= 2 &&
     whatsapp.trim().length >= 10 &&
-    email.includes("@") &&
-    (payMethod === "pix" || (cardNumber.length >= 16 && cardExpiry.length >= 4 && cardCvv.length >= 3));
+    email.includes("@");
+
+  const handlePayment = async () => {
+    if (!canFinish || loading) return;
+    setLoading(true);
+
+    try {
+      // Upload piece file if exists
+      let pieceImageUrl: string | undefined;
+      if (campaignData.pieceFile) {
+        const fileName = `${Date.now()}-${campaignData.pieceFile.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("product-uploads")
+          .upload(fileName, campaignData.pieceFile);
+
+        if (!uploadError && uploadData) {
+          const { data: urlData } = supabase.storage
+            .from("product-uploads")
+            .getPublicUrl(uploadData.path);
+          pieceImageUrl = urlData.publicUrl;
+        }
+      }
+
+      // Create order as pending
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          customer_name: name,
+          email,
+          whatsapp: whatsapp || null,
+          brand_name: campaignData.brandName,
+          brand_description: campaignData.brandDescription || null,
+          campaign_goal: campaignData.campaignGoal || null,
+          model_type: modelType,
+          piece_description: campaignData.pieceDescription || null,
+          photos_qty: photos,
+          videos_qty: videos,
+          total_price: discountedTotal,
+          status: "pending",
+        })
+        .select()
+        .single();
+
+      if (orderError || !order) {
+        toast({ title: "Erro", description: "Não foi possível criar o pedido.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
+      // Create Stripe checkout session
+      const { data: paymentData, error: paymentError } = await supabase.functions.invoke("create-payment", {
+        body: {
+          orderId: order.id,
+          amount: discountedTotal,
+          description: `${photos} foto${photos > 1 ? "s" : ""} editorial${photos > 1 ? "is" : ""}${videos > 0 ? ` + ${videos} vídeo${videos > 1 ? "s" : ""}` : ""} — ${campaignData.brandName}`,
+          customerEmail: email,
+          customerName: name,
+        },
+      });
+
+      if (paymentError || !paymentData?.url) {
+        toast({ title: "Erro", description: "Erro ao criar sessão de pagamento.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
+      // Redirect to Stripe Checkout
+      window.location.href = paymentData.url;
+    } catch (err) {
+      console.error("Payment error:", err);
+      toast({ title: "Erro", description: "Erro ao processar pagamento.", variant: "destructive" });
+      setLoading(false);
+    }
+  };
 
   return (
     <motion.div
@@ -154,7 +232,7 @@ const StepCheckout = ({ total, photos, videos, onFinish, onBack }: CheckoutProps
           Finalize seu pedido
         </h2>
         <p className="text-muted-foreground font-body text-xs tracking-wider uppercase">
-          Pagamento 100% seguro · Arquivos entregues em minutos
+          Pagamento 100% seguro via Stripe · Arquivos entregues em minutos
         </p>
       </div>
 
@@ -243,94 +321,6 @@ const StepCheckout = ({ total, photos, videos, onFinish, onBack }: CheckoutProps
         </div>
       </div>
 
-      {/* Payment Method */}
-      <div className="space-y-3">
-        <h3 className="font-display text-sm text-foreground flex items-center gap-2 tracking-wider uppercase">
-          <Lock className="w-3.5 h-3.5 text-primary" /> Pagamento
-        </h3>
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => setPayMethod("pix")}
-            className={`flex items-center justify-center gap-2 p-4 rounded-lg border text-sm font-body transition-all duration-300 ${
-              payMethod === "pix"
-                ? "border-primary/60 bg-primary/5 text-primary"
-                : "border-border bg-card text-muted-foreground hover:border-primary/30"
-            }`}
-          >
-            <QrCode className="w-5 h-5" />
-            <div className="text-left">
-              <span className="font-medium block text-xs">PIX</span>
-              <span className="text-[9px] opacity-60 tracking-wider">Aprovação instantânea</span>
-            </div>
-          </button>
-          <button
-            onClick={() => setPayMethod("card")}
-            className={`flex items-center justify-center gap-2 p-4 rounded-lg border text-sm font-body transition-all duration-300 ${
-              payMethod === "card"
-                ? "border-primary/60 bg-primary/5 text-primary"
-                : "border-border bg-card text-muted-foreground hover:border-primary/30"
-            }`}
-          >
-            <CreditCard className="w-5 h-5" />
-            <div className="text-left">
-              <span className="font-medium block text-xs">Cartão</span>
-              <span className="text-[9px] opacity-60 tracking-wider">Crédito ou débito</span>
-            </div>
-          </button>
-        </div>
-
-        {payMethod === "pix" && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            className="bg-card border border-primary/10 rounded-lg p-6 text-center space-y-3"
-          >
-            <div className="w-36 h-36 mx-auto bg-background/50 rounded-lg flex items-center justify-center border border-border">
-              <QrCode className="w-16 h-16 text-primary/30" />
-            </div>
-            <p className="text-[10px] text-muted-foreground font-body tracking-wider">
-              QR Code gerado após finalizar
-            </p>
-            <div className="flex items-center justify-center gap-1.5 text-[9px] text-primary/60">
-              <ShieldCheck className="w-3 h-3" />
-              <span className="tracking-wider uppercase">Aprovação em segundos</span>
-            </div>
-          </motion.div>
-        )}
-
-        {payMethod === "card" && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            className="space-y-3"
-          >
-            <input
-              type="text"
-              placeholder="Número do cartão"
-              value={cardNumber}
-              onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, "").slice(0, 16))}
-              className="velora-input tracking-[0.2em]"
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="text"
-                placeholder="MM/AA"
-                value={cardExpiry}
-                onChange={(e) => setCardExpiry(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                className="velora-input"
-              />
-              <input
-                type="text"
-                placeholder="CVV"
-                value={cardCvv}
-                onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                className="velora-input"
-              />
-            </div>
-          </motion.div>
-        )}
-      </div>
-
       {/* Social Proof */}
       <div className="space-y-4">
         <div className="text-center">
@@ -375,19 +365,41 @@ const StepCheckout = ({ total, photos, videos, onFinish, onBack }: CheckoutProps
         <span className="flex items-center gap-1.5"><Zap className="w-3 h-3 text-primary/50" /> Entrega imediata</span>
       </div>
 
+      {/* Instagram */}
+      <div className="text-center">
+        <a
+          href="https://www.instagram.com/velora.direction/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 text-xs font-body text-muted-foreground hover:text-primary transition-colors tracking-wider"
+        >
+          <Instagram className="w-4 h-4" />
+          @velora.direction
+        </a>
+      </div>
+
       {/* Actions */}
       <div className="flex flex-col gap-4 pt-2">
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          disabled={!canFinish}
-          onClick={() => onFinish({ whatsapp, email })}
+          disabled={!canFinish || loading}
+          onClick={handlePayment}
           className="w-full velora-btn-primary py-4 disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center gap-2 velora-glow"
         >
-          {payMethod === "pix" ? <QrCode className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
-          {payMethod === "pix" ? "Gerar PIX e Finalizar" : "Pagar e Finalizar"} · R${discountedTotal}
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Redirecionando...
+            </>
+          ) : (
+            <>
+              <Lock className="w-4 h-4" />
+              Pagar com Stripe · R${discountedTotal}
+            </>
+          )}
         </motion.button>
-        <button onClick={onBack} className="velora-btn-ghost text-center">
+        <button onClick={onBack} disabled={loading} className="velora-btn-ghost text-center">
           ← Voltar
         </button>
       </div>
