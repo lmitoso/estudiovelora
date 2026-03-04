@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import heroImg from "@/assets/hero-velora.jpg";
 import StepIndicator from "@/components/velora/StepIndicator";
@@ -6,9 +6,8 @@ import StepModel from "@/components/velora/StepModel";
 import StepCampaign, { CampaignData } from "@/components/velora/StepCampaign";
 import StepPackage, { PackageData } from "@/components/velora/StepPackage";
 import StepCheckout from "@/components/velora/StepCheckout";
-import { toast } from "@/hooks/use-toast";
 
-const STEP_LABELS = ["Modelo", "Campanha", "Pacote", "Checkout", "Gerando"];
+const STEP_LABELS = ["Modelo", "Campanha", "Pacote", "Checkout"];
 
 const Index = () => {
   const [started, setStarted] = useState(false);
@@ -24,71 +23,8 @@ const Index = () => {
     pieceDescription: "",
   });
   const [pkg, setPkg] = useState<PackageData>({ photos: 3, videos: 0 });
-  const [finished, setFinished] = useState(false);
-  const [contactEmail, setContactEmail] = useState("");
-  const [orderId, setOrderId] = useState<string | null>(null);
-  const [generatedResults, setGeneratedResults] = useState<{ images: string[]; video: string | null } | null>(null);
 
   const total = pkg.photos * 27 + pkg.videos * 37;
-
-  // Create order in DB and start generation AFTER checkout
-  const handleCheckoutFinish = useCallback(async (info: { whatsapp: string; email: string }) => {
-    try {
-      // Upload piece file if exists
-      let pieceImageUrl: string | undefined;
-      if (campaign.pieceFile) {
-        const fileName = `${Date.now()}-${campaign.pieceFile.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("product-uploads")
-          .upload(fileName, campaign.pieceFile);
-
-        if (uploadError) {
-          console.error("Upload error:", uploadError);
-        } else {
-          const { data: urlData } = supabase.storage
-            .from("product-uploads")
-            .getPublicUrl(uploadData.path);
-          pieceImageUrl = urlData.publicUrl;
-        }
-      }
-
-      // Create order with contact info
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          email: info.email,
-          whatsapp: info.whatsapp || null,
-          brand_name: campaign.brandName,
-          brand_description: campaign.brandDescription || null,
-          campaign_goal: campaign.campaignGoal || null,
-          model_type: modelType,
-          piece_description: campaign.pieceDescription || null,
-          photos_qty: pkg.photos,
-          videos_qty: pkg.videos,
-          total_price: total,
-          status: "paid",
-        })
-        .select()
-        .single();
-
-      if (orderError || !order) {
-        toast({ title: "Erro", description: "Não foi possível criar o pedido.", variant: "destructive" });
-        return;
-      }
-
-      setContactEmail(info.email);
-      setOrderId(order.id);
-      setStep(4); // Go to generation step
-    } catch (err) {
-      console.error("Error creating order:", err);
-      toast({ title: "Erro", description: "Erro ao processar pedido.", variant: "destructive" });
-    }
-  }, [campaign, modelType, pkg, total]);
-
-  const handleGenComplete = useCallback((results: { images: string[]; video: string | null }) => {
-    setGeneratedResults(results);
-    setFinished(true);
-  }, []);
 
   if (!started) {
     return (
@@ -173,14 +109,6 @@ const Index = () => {
     );
   }
 
-  if (finished) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <SuccessPage email={contactEmail} />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background flex flex-col items-center pt-10 pb-16 px-4">
       <motion.h1
@@ -192,7 +120,7 @@ const Index = () => {
       </motion.h1>
       <div className="velora-divider mx-auto mb-8" />
 
-      <StepIndicator currentStep={step} totalSteps={5} labels={STEP_LABELS} />
+      <StepIndicator currentStep={step} totalSteps={4} labels={STEP_LABELS} />
 
       <div className="w-full max-w-2xl">
         <AnimatePresence mode="wait">
@@ -211,12 +139,16 @@ const Index = () => {
               total={total}
               photos={pkg.photos}
               videos={pkg.videos}
-              onFinish={handleCheckoutFinish}
+              modelType={modelType}
+              campaignData={{
+                brandName: campaign.brandName,
+                brandDescription: campaign.brandDescription,
+                campaignGoal: campaign.campaignGoal,
+                pieceDescription: campaign.pieceDescription,
+                pieceFile: campaign.pieceFile,
+              }}
               onBack={() => setStep(2)}
             />
-          )}
-          {step === 4 && orderId && (
-            <StepGenerating key="generating" orderId={orderId} onComplete={handleGenComplete} />
           )}
         </AnimatePresence>
       </div>
