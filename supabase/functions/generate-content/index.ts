@@ -8,6 +8,29 @@ const corsHeaders = {
 };
 
 const FAL_API_URL = "https://queue.fal.run";
+const MAX_RETRIES = 3;
+
+// Retry helper with exponential backoff
+async function withRetry<T>(fn: () => Promise<T>, retries = MAX_RETRIES, baseDelay = 2000): Promise<T> {
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.warn(`Attempt ${attempt + 1}/${retries} failed: ${lastError.message}`);
+      // Don't retry on balance/auth errors
+      if (lastError.message.includes("Exhausted balance") || lastError.message.includes("401")) {
+        throw lastError;
+      }
+      if (attempt < retries - 1) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
+  }
+  throw lastError!;
+}
 
 // Art Director: builds optimized prompts based on the Creative DNA catalog
 function buildImagePrompt(briefing: {
@@ -47,6 +70,57 @@ function buildVideoPrompt(brandName: string): string {
   return `Subtle editorial fashion movement. The model slowly turns their head with quiet confidence. Gentle fabric movement from a soft breeze. Cinematic slow-motion luxury campaign for ${brandName}. No sudden movements, no smiling, silent authority atmosphere. 5 seconds.`;
 }
 
+// Generate a single image with fal.ai (with polling)
+async function generateImage(FAL_API_KEY: string, prompt: string): Promise<string> {
+  const falResponse = await fetch(`${FAL_API_URL}/fal-ai/nano-banana-2`, {
+    method: "POST",
+    headers: {
+      Authorization: `Key ${FAL_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      prompt,
+      image_size: "portrait_4_3",
+      num_inference_steps: 30,
+      guidance_scale: 7.5,
+    }),
+  });
+
+  if (!falResponse.ok) {
+    const errText = await falResponse.text();
+    throw new Error(`fal.ai error [${falResponse.status}]: ${errText}`);
+  }
+
+  const falData = await falResponse.json();
+
+  if (falData.request_id) {
+    for (let attempt = 0; attempt < 60; attempt++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      const statusRes = await fetch(
+        `${FAL_API_URL}/fal-ai/nano-banana-2/requests/${falData.request_id}/status`,
+        { headers: { Authorization: `Key ${FAL_API_KEY}` } }
+      );
+      const statusData = await statusRes.json();
+      if (statusData.status === "COMPLETED") {
+        const resultRes = await fetch(
+          `${FAL_API_URL}/fal-ai/nano-banana-2/requests/${falData.request_id}`,
+          { headers: { Authorization: `Key ${FAL_API_KEY}` } }
+        );
+        const result = await resultRes.json();
+        const url = result.images?.[0]?.url;
+        if (url) return url;
+        throw new Error("No image URL in completed result");
+      } else if (statusData.status === "FAILED") {
+        throw new Error("fal.ai generation failed");
+      }
+    }
+    throw new Error("fal.ai generation timed out");
+  } else if (falData.images?.[0]?.url) {
+    return falData.images[0].url;
+  }
+  throw new Error("Unexpected fal.ai response format");
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -76,7 +150,7 @@ serve(async (req) => {
 
     const results: { images: string[]; video: string | null } = { images: [], video: null };
 
-    // Generate images with Nano Banana 2
+    // Generate images with retry
     for (let i = 0; i < order.photos_qty; i++) {
       const prompt = buildImagePrompt({
         brandName: order.brand_name,
@@ -86,83 +160,21 @@ serve(async (req) => {
         pieceDescription: order.piece_description,
       });
 
-      // Create generation record
       const { data: gen } = await supabase
         .from("generations")
-        .insert({
-          order_id: orderId,
-          type: "image",
-          status: "processing",
-          prompt,
-        })
+        .insert({ order_id: orderId, type: "image", status: "processing", prompt })
         .select()
         .single();
 
       try {
-        // Call fal.ai Nano Banana 2 (text-to-image)
-        const falResponse = await fetch(`${FAL_API_URL}/fal-ai/nano-banana-2`, {
-          method: "POST",
-          headers: {
-            Authorization: `Key ${FAL_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            prompt,
-            image_size: "portrait_4_3",
-            num_inference_steps: 30,
-            guidance_scale: 7.5,
-          }),
-        });
-
-        if (!falResponse.ok) {
-          const errText = await falResponse.text();
-          throw new Error(`fal.ai error [${falResponse.status}]: ${errText}`);
-        }
-
-        const falData = await falResponse.json();
-
-        // fal.ai queue returns request_id for async processing
-        if (falData.request_id) {
-          // Poll for result
-          let result = null;
-          for (let attempt = 0; attempt < 60; attempt++) {
-            await new Promise((r) => setTimeout(r, 2000));
-            const statusRes = await fetch(
-              `${FAL_API_URL}/fal-ai/nano-banana-2/requests/${falData.request_id}/status`,
-              { headers: { Authorization: `Key ${FAL_API_KEY}` } }
-            );
-            const statusData = await statusRes.json();
-            if (statusData.status === "COMPLETED") {
-              const resultRes = await fetch(
-                `${FAL_API_URL}/fal-ai/nano-banana-2/requests/${falData.request_id}`,
-                { headers: { Authorization: `Key ${FAL_API_KEY}` } }
-              );
-              result = await resultRes.json();
-              break;
-            } else if (statusData.status === "FAILED") {
-              throw new Error("fal.ai generation failed");
-            }
-          }
-          if (!result) throw new Error("fal.ai generation timed out");
-
-          const imageUrl = result.images?.[0]?.url;
-          if (imageUrl) {
-            results.images.push(imageUrl);
-            await supabase
-              .from("generations")
-              .update({ status: "completed", output_url: imageUrl, completed_at: new Date().toISOString() })
-              .eq("id", gen!.id);
-          }
-        } else if (falData.images?.[0]?.url) {
-          // Synchronous response
-          results.images.push(falData.images[0].url);
-          await supabase
-            .from("generations")
-            .update({ status: "completed", output_url: falData.images[0].url, completed_at: new Date().toISOString() })
-            .eq("id", gen!.id);
-        }
+        const imageUrl = await withRetry(() => generateImage(FAL_API_KEY, prompt));
+        results.images.push(imageUrl);
+        await supabase
+          .from("generations")
+          .update({ status: "completed", output_url: imageUrl, completed_at: new Date().toISOString() })
+          .eq("id", gen!.id);
       } catch (genError) {
-        console.error("Image generation error:", genError);
+        console.error(`Image generation failed after ${MAX_RETRIES} retries:`, genError);
         await supabase
           .from("generations")
           .update({ status: "failed", error_message: String(genError) })
@@ -187,61 +199,63 @@ serve(async (req) => {
         .single();
 
       try {
-        const klingResponse = await fetch(
-          `${FAL_API_URL}/fal-ai/kling-video/v2.1/standard/image-to-video`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Key ${FAL_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              prompt: videoPrompt,
-              image_url: results.images[0],
-              duration: "5",
-              aspect_ratio: "9:16",
-            }),
+        const videoUrl = await withRetry(async () => {
+          const klingResponse = await fetch(
+            `${FAL_API_URL}/fal-ai/kling-video/v2.1/standard/image-to-video`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Key ${FAL_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                prompt: videoPrompt,
+                image_url: results.images[0],
+                duration: "5",
+                aspect_ratio: "9:16",
+              }),
+            }
+          );
+
+          if (!klingResponse.ok) {
+            const errText = await klingResponse.text();
+            throw new Error(`Kling error [${klingResponse.status}]: ${errText}`);
           }
-        );
 
-        if (!klingResponse.ok) {
-          const errText = await klingResponse.text();
-          throw new Error(`Kling error [${klingResponse.status}]: ${errText}`);
-        }
+          const klingData = await klingResponse.json();
 
-        const klingData = await klingResponse.json();
-
-        if (klingData.request_id) {
-          let videoResult = null;
-          // Kling takes 1-3 minutes, poll for up to 5 minutes
-          for (let attempt = 0; attempt < 150; attempt++) {
-            await new Promise((r) => setTimeout(r, 2000));
-            const statusRes = await fetch(
-              `${FAL_API_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}/status`,
-              { headers: { Authorization: `Key ${FAL_API_KEY}` } }
-            );
-            const statusData = await statusRes.json();
-            if (statusData.status === "COMPLETED") {
-              const resultRes = await fetch(
-                `${FAL_API_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}`,
+          if (klingData.request_id) {
+            for (let attempt = 0; attempt < 150; attempt++) {
+              await new Promise((r) => setTimeout(r, 2000));
+              const statusRes = await fetch(
+                `${FAL_API_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}/status`,
                 { headers: { Authorization: `Key ${FAL_API_KEY}` } }
               );
-              videoResult = await resultRes.json();
-              break;
-            } else if (statusData.status === "FAILED") {
-              throw new Error("Kling video generation failed");
+              const statusData = await statusRes.json();
+              if (statusData.status === "COMPLETED") {
+                const resultRes = await fetch(
+                  `${FAL_API_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}`,
+                  { headers: { Authorization: `Key ${FAL_API_KEY}` } }
+                );
+                const videoResult = await resultRes.json();
+                if (videoResult?.video?.url) return videoResult.video.url;
+                throw new Error("No video URL in completed result");
+              } else if (statusData.status === "FAILED") {
+                throw new Error("Kling video generation failed");
+              }
             }
+            throw new Error("Kling video generation timed out");
           }
-          if (videoResult?.video?.url) {
-            results.video = videoResult.video.url;
-            await supabase
-              .from("generations")
-              .update({ status: "completed", output_url: videoResult.video.url, completed_at: new Date().toISOString() })
-              .eq("id", videoGen!.id);
-          }
-        }
+          throw new Error("Unexpected Kling response");
+        });
+
+        results.video = videoUrl;
+        await supabase
+          .from("generations")
+          .update({ status: "completed", output_url: videoUrl, completed_at: new Date().toISOString() })
+          .eq("id", videoGen!.id);
       } catch (videoError) {
-        console.error("Video generation error:", videoError);
+        console.error(`Video generation failed after ${MAX_RETRIES} retries:`, videoError);
         await supabase
           .from("generations")
           .update({ status: "failed", error_message: String(videoError) })
@@ -249,8 +263,8 @@ serve(async (req) => {
       }
     }
 
-    // Update order status
-    const finalStatus = results.images.length > 0 ? "completed" : "failed";
+    // Update order status — use generation_failed instead of generic failed
+    const finalStatus = results.images.length > 0 ? "completed" : "generation_failed";
     await supabase.from("orders").update({ status: finalStatus, updated_at: new Date().toISOString() }).eq("id", orderId);
 
     // Trigger delivery email if content was generated
@@ -276,7 +290,7 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ success: true, results }), {
+    return new Response(JSON.stringify({ success: finalStatus === "completed", results, status: finalStatus }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

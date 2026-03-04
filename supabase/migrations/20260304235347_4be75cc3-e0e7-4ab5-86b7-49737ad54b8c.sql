@@ -1,0 +1,1 @@
+CREATE POLICY "Service can delete generations" ON public.generations FOR DELETE USING (true);
