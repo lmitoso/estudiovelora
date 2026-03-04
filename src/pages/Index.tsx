@@ -41,7 +41,8 @@ const Index = () => {
         {/* Hero BG */}
         <div className="absolute inset-0">
           <img src={heroImg} alt="Studio Velora editorial" className="w-full h-full object-cover opacity-30" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/50" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-background/95" />
+          <div className="absolute inset-x-0 top-0 h-32 bg-background" />
           {/* Spotlight effect */}
           <div className="absolute inset-0" style={{
             background: "radial-gradient(ellipse at 50% 30%, hsl(var(--gold) / 0.06) 0%, transparent 60%)"
