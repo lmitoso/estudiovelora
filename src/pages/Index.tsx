@@ -24,7 +24,7 @@ const Index = () => {
   });
   const [pkg, setPkg] = useState<PackageData>({ photos: 3, videos: 0 });
 
-  const total = pkg.photos * 27 + pkg.videos * 37;
+  const total = pkg.comboPrice ?? (pkg.photos * 27 + pkg.videos * 37);
 
   if (!started) {
     return (
