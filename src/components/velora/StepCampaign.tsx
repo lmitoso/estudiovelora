@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Upload } from "lucide-react";
+import { Upload, CheckCircle } from "lucide-react";
 
 type CampaignType = "avulsa" | "peca" | "colecao" | "";
 
@@ -21,9 +21,9 @@ interface StepCampaignProps {
 }
 
 const campaignTypes = [
-  { id: "avulsa" as CampaignType, label: "Campanha Avulsa", desc: "Uma campanha editorial completa para sua marca", icon: "🎯" },
-  { id: "peca" as CampaignType, label: "Campanha por Peça", desc: "Fotos focadas em uma peça específica que você enviar", icon: "👗" },
-  { id: "colecao" as CampaignType, label: "Mini Coleção", desc: "Conjunto de fotos para lançamento de coleção", icon: "✨" },
+  { id: "avulsa" as CampaignType, label: "Campanha Avulsa", desc: "Editorial completa para sua marca", icon: "🎯" },
+  { id: "peca" as CampaignType, label: "Campanha por Peça", desc: "Fotos focadas em uma peça específica", icon: "👗" },
+  { id: "colecao" as CampaignType, label: "Mini Coleção", desc: "Conjunto de fotos para lançamento", icon: "✨" },
 ];
 
 const StepCampaign = ({ data, onChange, onNext, onBack }: StepCampaignProps) => {
@@ -46,34 +46,38 @@ const StepCampaign = ({ data, onChange, onNext, onBack }: StepCampaignProps) => 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="space-y-6 max-w-lg mx-auto"
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="space-y-7 max-w-lg mx-auto"
     >
-      <div className="text-center space-y-2">
+      <div className="text-center space-y-3">
         <h2 className="text-3xl md:text-4xl font-display font-light tracking-wide velora-text-gradient">
           Detalhes da campanha
         </h2>
-        <p className="text-muted-foreground font-body text-sm">
+        <p className="text-muted-foreground font-body text-xs tracking-wider uppercase">
           Conte-nos sobre sua marca e o que deseja transmitir
         </p>
       </div>
 
       {/* Campaign type */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {campaignTypes.map((ct) => (
+        {campaignTypes.map((ct, i) => (
           <motion.button
             key={ct.id}
-            whileHover={{ scale: 1.03 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.08 }}
+            whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => update({ type: ct.id })}
-            className={`p-4 rounded-lg border text-left transition-all ${
+            className={`p-4 rounded-lg border text-left transition-all duration-300 ${
               data.type === ct.id
-                ? "border-primary bg-primary/10"
-                : "border-border bg-card hover:border-primary/40"
+                ? "border-primary/60 bg-primary/5"
+                : "border-border bg-card hover:border-primary/30"
             }`}
           >
             <span className="text-xl">{ct.icon}</span>
-            <h4 className="font-display text-sm mt-1 text-foreground">{ct.label}</h4>
-            <p className="text-[10px] text-muted-foreground font-body">{ct.desc}</p>
+            <h4 className="font-display text-sm mt-1.5 text-foreground tracking-wide">{ct.label}</h4>
+            <p className="text-[10px] text-muted-foreground font-body mt-0.5">{ct.desc}</p>
           </motion.button>
         ))}
       </div>
@@ -85,21 +89,21 @@ const StepCampaign = ({ data, onChange, onNext, onBack }: StepCampaignProps) => 
           placeholder="Nome da sua marca"
           value={data.brandName}
           onChange={(e) => update({ brandName: e.target.value })}
-          className="w-full px-4 py-3 bg-card border border-border rounded-lg font-body text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+          className="velora-input"
         />
         <textarea
           placeholder="Descreva sua marca em poucas palavras..."
           value={data.brandDescription}
           onChange={(e) => update({ brandDescription: e.target.value })}
           rows={2}
-          className="w-full px-4 py-3 bg-card border border-border rounded-lg font-body text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors resize-none"
+          className="velora-input resize-none"
         />
         <textarea
           placeholder="O que você quer transmitir nessa campanha?"
           value={data.campaignGoal}
           onChange={(e) => update({ campaignGoal: e.target.value })}
           rows={2}
-          className="w-full px-4 py-3 bg-card border border-border rounded-lg font-body text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors resize-none"
+          className="velora-input resize-none"
         />
       </div>
 
@@ -119,8 +123,8 @@ const StepCampaign = ({ data, onChange, onNext, onBack }: StepCampaignProps) => 
               const file = e.dataTransfer.files[0];
               if (file) handleFile(file);
             }}
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
-              dragOver ? "border-primary bg-primary/5" : "border-border"
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-300 cursor-pointer ${
+              dragOver ? "border-primary/60 bg-primary/5" : data.pieceFile ? "border-primary/30 bg-primary/5" : "border-border hover:border-primary/30"
             }`}
             onClick={() => {
               const input = document.createElement("input");
@@ -133,31 +137,40 @@ const StepCampaign = ({ data, onChange, onNext, onBack }: StepCampaignProps) => 
               input.click();
             }}
           >
-            <Upload className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground font-body">
-              {data.pieceFile ? data.pieceFile.name : "Arraste a foto da peça ou clique para enviar"}
-            </p>
+            {data.pieceFile ? (
+              <div className="flex items-center justify-center gap-2 text-primary">
+                <CheckCircle className="w-5 h-5" />
+                <span className="text-sm font-body">{data.pieceFile.name}</span>
+              </div>
+            ) : (
+              <>
+                <Upload className="w-5 h-5 mx-auto text-muted-foreground mb-2" />
+                <p className="text-xs text-muted-foreground font-body">
+                  Arraste a foto da peça ou clique para enviar
+                </p>
+              </>
+            )}
           </div>
           <textarea
             placeholder="Descreva o que você imagina para essa peça..."
             value={data.pieceDescription}
             onChange={(e) => update({ pieceDescription: e.target.value })}
             rows={2}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg font-body text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors resize-none"
+            className="velora-input resize-none"
           />
         </motion.div>
       )}
 
       <div className="flex justify-between pt-4">
-        <button onClick={onBack} className="text-muted-foreground font-body text-sm hover:text-foreground transition-colors">
+        <button onClick={onBack} className="velora-btn-ghost">
           ← Voltar
         </button>
         <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
           disabled={!canContinue}
           onClick={onNext}
-          className="velora-gradient px-8 py-3 rounded-lg font-body text-sm font-medium text-primary-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
+          className="velora-btn-primary disabled:opacity-20 disabled:cursor-not-allowed transition-opacity"
         >
           Continuar
         </motion.button>
