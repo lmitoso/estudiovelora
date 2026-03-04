@@ -11,7 +11,7 @@ import SuccessPage from "@/components/velora/SuccessPage";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-const STEP_LABELS = ["Modelo", "Campanha", "Pacote", "Gerar", "Checkout"];
+const STEP_LABELS = ["Modelo", "Campanha", "Pacote", "Checkout", "Gerando"];
 
 const Index = () => {
   const [started, setStarted] = useState(false);
@@ -34,8 +34,8 @@ const Index = () => {
 
   const total = pkg.photos * 27 + pkg.videos * 37;
 
-  // Create order in DB and start generation
-  const handleStartGeneration = useCallback(async () => {
+  // Create order in DB and start generation AFTER checkout
+  const handleCheckoutFinish = useCallback(async (info: { whatsapp: string; email: string }) => {
     try {
       // Upload piece file if exists
       let pieceImageUrl: string | undefined;
@@ -55,11 +55,12 @@ const Index = () => {
         }
       }
 
-      // Create order
+      // Create order with contact info
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
-          email: "pending@velora.com",
+          email: info.email,
+          whatsapp: info.whatsapp || null,
           brand_name: campaign.brandName,
           brand_description: campaign.brandDescription || null,
           campaign_goal: campaign.campaignGoal || null,
@@ -78,8 +79,9 @@ const Index = () => {
         return;
       }
 
+      setContactEmail(info.email);
       setOrderId(order.id);
-      setStep(3);
+      setStep(4); // Go to generation step
     } catch (err) {
       console.error("Error creating order:", err);
       toast({ title: "Erro", description: "Erro ao processar pedido.", variant: "destructive" });
@@ -88,7 +90,7 @@ const Index = () => {
 
   const handleGenComplete = useCallback((results: { images: string[]; video: string | null }) => {
     setGeneratedResults(results);
-    setStep(4);
+    setFinished(true);
   }, []);
 
   if (!started) {
@@ -204,27 +206,20 @@ const Index = () => {
             <StepCampaign key="campaign" data={campaign} onChange={setCampaign} onNext={() => setStep(2)} onBack={() => setStep(0)} />
           )}
           {step === 2 && (
-            <StepPackage key="package" data={pkg} onChange={setPkg} onGenerate={handleStartGeneration} onBack={() => setStep(1)} />
+            <StepPackage key="package" data={pkg} onChange={setPkg} onGenerate={() => setStep(3)} onBack={() => setStep(1)} />
           )}
-          {step === 3 && orderId && (
-            <StepGenerating key="generating" orderId={orderId} onComplete={handleGenComplete} />
-          )}
-          {step === 4 && (
+          {step === 3 && (
             <StepCheckout
               key="checkout"
               total={total}
               photos={pkg.photos}
               videos={pkg.videos}
-              onFinish={(info) => {
-                // Update order with contact info
-                if (orderId) {
-                  supabase.from("orders").update({ email: info.email, whatsapp: info.whatsapp }).eq("id", orderId);
-                }
-                setContactEmail(info.email);
-                setFinished(true);
-              }}
+              onFinish={handleCheckoutFinish}
               onBack={() => setStep(2)}
             />
+          )}
+          {step === 4 && orderId && (
+            <StepGenerating key="generating" orderId={orderId} onComplete={handleGenComplete} />
           )}
         </AnimatePresence>
       </div>

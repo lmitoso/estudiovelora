@@ -180,7 +180,7 @@ const StepPackage = ({ data, onChange, onGenerate, onBack }: StepPackageProps) =
           onClick={onGenerate}
           className="velora-btn-primary disabled:opacity-20 animate-pulse-gold"
         >
-          ✨ Gerar Campanha
+          Finalizar Pedido →
         </motion.button>
       </div>
     </motion.div>
