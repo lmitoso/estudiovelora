@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { CheckCircle, Mail, MessageCircle } from "lucide-react";
+import { CheckCircle, Mail, Instagram } from "lucide-react";
 
 interface SuccessPageProps {
   email: string;
@@ -29,7 +29,7 @@ const SuccessPage = ({ email }: SuccessPageProps) => {
         </h2>
         <div className="velora-divider mx-auto" />
         <p className="text-muted-foreground font-body text-sm max-w-sm leading-relaxed">
-          Sua campanha editorial está sendo finalizada. Você receberá todos os arquivos em máxima resolução prontos para postar.
+          Seu material editorial está sendo gerado e será enviado em instantes para o e-mail cadastrado. Fique de olho na sua caixa de entrada!
         </p>
       </div>
 
@@ -39,23 +39,24 @@ const SuccessPage = ({ email }: SuccessPageProps) => {
           <span className="text-sm font-body text-foreground">{email}</span>
         </div>
         <div className="h-px bg-border" />
-        <div className="flex items-center gap-3">
-          <MessageCircle className="w-4 h-4 text-primary/60" />
-          <span className="text-sm font-body text-muted-foreground">WhatsApp confirmado</span>
-        </div>
+        <p className="text-xs font-body text-muted-foreground text-left">
+          O conteúdo será enviado automaticamente para este e-mail assim que estiver pronto.
+        </p>
       </div>
 
       <p className="text-[10px] text-muted-foreground font-body tracking-wider uppercase">
-        Prazo de entrega: até 24 horas úteis
+        Tempo estimado: alguns minutos
       </p>
 
       <motion.a
-        href="https://instagram.com/studiovelora"
+        href="https://www.instagram.com/velora.direction/"
         target="_blank"
+        rel="noopener noreferrer"
         whileHover={{ scale: 1.03 }}
-        className="velora-btn-primary"
+        className="velora-btn-primary flex items-center gap-2"
       >
-        Seguir @studiovelora
+        <Instagram className="w-4 h-4" />
+        Seguir @velora.direction
       </motion.a>
     </motion.div>
   );
