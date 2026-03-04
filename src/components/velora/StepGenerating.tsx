@@ -41,38 +41,48 @@ const StepGenerating = ({ onComplete }: StepGeneratingProps) => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col items-center justify-center space-y-8 py-16"
+      className="flex flex-col items-center justify-center space-y-10 py-20"
     >
       {/* Spinner */}
-      <div className="relative w-24 h-24">
+      <div className="relative w-28 h-28">
         <motion.div
-          className="absolute inset-0 rounded-full border-2 border-primary/20"
-          style={{ borderTopColor: "hsl(42 80% 55%)" }}
+          className="absolute inset-0 rounded-full border-2 border-primary/15"
+          style={{ borderTopColor: "hsl(var(--gold))" }}
           animate={{ rotate: 360 }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
         />
-        <div className="absolute inset-2 rounded-full bg-card flex items-center justify-center">
-          <span className="font-display text-xl font-bold velora-text-gradient">{progress}%</span>
+        <motion.div
+          className="absolute inset-1 rounded-full border border-primary/5"
+          style={{ borderBottomColor: "hsl(var(--gold-muted))" }}
+          animate={{ rotate: -360 }}
+          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+        />
+        <div className="absolute inset-3 rounded-full bg-card flex items-center justify-center">
+          <span className="font-display text-2xl font-light velora-text-gradient">{progress}%</span>
         </div>
       </div>
 
-      <div className="text-center space-y-2">
-        <h3 className="font-display text-xl text-foreground">Criando sua campanha</h3>
+      <div className="text-center space-y-3">
+        <h3 className="font-display text-xl text-foreground tracking-wide">Criando sua campanha</h3>
+        <div className="velora-divider mx-auto" />
         <motion.p
           key={msgIndex}
-          initial={{ opacity: 0, y: 5 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-sm text-muted-foreground font-body"
+          className="text-xs text-muted-foreground font-body tracking-wider"
         >
           {messages[msgIndex]}
         </motion.p>
       </div>
 
       {/* Progress bar */}
-      <div className="w-64 h-1.5 bg-muted rounded-full overflow-hidden">
+      <div className="w-72 h-0.5 bg-border rounded-full overflow-hidden">
         <motion.div
-          className="h-full velora-gradient rounded-full"
-          style={{ width: `${progress}%` }}
+          className="h-full rounded-full"
+          style={{
+            width: `${progress}%`,
+            background: `linear-gradient(90deg, hsl(var(--gold-muted)), hsl(var(--gold)))`,
+          }}
         />
       </div>
     </motion.div>
