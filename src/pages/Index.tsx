@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import heroImg from "@/assets/hero-velora.jpg";
-import veloraLogo from "@/assets/velora-logo-tagline.jpeg";
 import StepIndicator from "@/components/velora/StepIndicator";
 import StepModel from "@/components/velora/StepModel";
 import StepCampaign, { CampaignData } from "@/components/velora/StepCampaign";
@@ -9,6 +8,8 @@ import StepPackage, { PackageData } from "@/components/velora/StepPackage";
 import StepGenerating from "@/components/velora/StepGenerating";
 import StepCheckout from "@/components/velora/StepCheckout";
 import SuccessPage from "@/components/velora/SuccessPage";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const STEP_LABELS = ["Modelo", "Campanha", "Pacote", "Gerar", "Checkout"];
 
@@ -28,22 +29,75 @@ const Index = () => {
   const [pkg, setPkg] = useState<PackageData>({ photos: 3, videos: 0 });
   const [finished, setFinished] = useState(false);
   const [contactEmail, setContactEmail] = useState("");
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [generatedResults, setGeneratedResults] = useState<{ images: string[]; video: string | null } | null>(null);
 
   const total = pkg.photos * 27 + pkg.videos * 37;
 
-  const handleGenComplete = useCallback(() => {
+  // Create order in DB and start generation
+  const handleStartGeneration = useCallback(async () => {
+    try {
+      // Upload piece file if exists
+      let pieceImageUrl: string | undefined;
+      if (campaign.pieceFile) {
+        const fileName = `${Date.now()}-${campaign.pieceFile.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("product-uploads")
+          .upload(fileName, campaign.pieceFile);
+
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+        } else {
+          const { data: urlData } = supabase.storage
+            .from("product-uploads")
+            .getPublicUrl(uploadData.path);
+          pieceImageUrl = urlData.publicUrl;
+        }
+      }
+
+      // Create order
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          email: "pending@velora.com",
+          brand_name: campaign.brandName,
+          brand_description: campaign.brandDescription || null,
+          campaign_goal: campaign.campaignGoal || null,
+          model_type: modelType,
+          piece_description: campaign.pieceDescription || null,
+          photos_qty: pkg.photos,
+          videos_qty: pkg.videos,
+          total_price: total,
+          status: "paid",
+        })
+        .select()
+        .single();
+
+      if (orderError || !order) {
+        toast({ title: "Erro", description: "Não foi possível criar o pedido.", variant: "destructive" });
+        return;
+      }
+
+      setOrderId(order.id);
+      setStep(3);
+    } catch (err) {
+      console.error("Error creating order:", err);
+      toast({ title: "Erro", description: "Erro ao processar pedido.", variant: "destructive" });
+    }
+  }, [campaign, modelType, pkg, total]);
+
+  const handleGenComplete = useCallback((results: { images: string[]; video: string | null }) => {
+    setGeneratedResults(results);
     setStep(4);
   }, []);
 
   if (!started) {
     return (
       <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-center">
-        {/* Hero BG */}
         <div className="absolute inset-0">
           <img src={heroImg} alt="Studio Velora editorial" className="w-full h-full object-cover opacity-30" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-background/95" />
           <div className="absolute inset-x-0 top-0 h-32 bg-background" />
-          {/* Spotlight effect */}
           <div className="absolute inset-0" style={{
             background: "radial-gradient(ellipse at 50% 30%, hsl(var(--gold) / 0.06) 0%, transparent 60%)"
           }} />
@@ -55,7 +109,6 @@ const Index = () => {
           transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
           className="relative z-10 text-center px-6 max-w-xl space-y-8"
         >
-          {/* Logo */}
           <motion.h1
             initial={{ opacity: 0, letterSpacing: "0.5em" }}
             animate={{ opacity: 1, letterSpacing: "0.3em" }}
@@ -151,10 +204,10 @@ const Index = () => {
             <StepCampaign key="campaign" data={campaign} onChange={setCampaign} onNext={() => setStep(2)} onBack={() => setStep(0)} />
           )}
           {step === 2 && (
-            <StepPackage key="package" data={pkg} onChange={setPkg} onGenerate={() => setStep(3)} onBack={() => setStep(1)} />
+            <StepPackage key="package" data={pkg} onChange={setPkg} onGenerate={handleStartGeneration} onBack={() => setStep(1)} />
           )}
-          {step === 3 && (
-            <StepGenerating key="generating" onComplete={handleGenComplete} />
+          {step === 3 && orderId && (
+            <StepGenerating key="generating" orderId={orderId} onComplete={handleGenComplete} />
           )}
           {step === 4 && (
             <StepCheckout
@@ -162,7 +215,14 @@ const Index = () => {
               total={total}
               photos={pkg.photos}
               videos={pkg.videos}
-              onFinish={(info) => { setContactEmail(info.email); setFinished(true); }}
+              onFinish={(info) => {
+                // Update order with contact info
+                if (orderId) {
+                  supabase.from("orders").update({ email: info.email, whatsapp: info.whatsapp }).eq("id", orderId);
+                }
+                setContactEmail(info.email);
+                setFinished(true);
+              }}
               onBack={() => setStep(2)}
             />
           )}
