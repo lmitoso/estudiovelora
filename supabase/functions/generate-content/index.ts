@@ -253,6 +253,29 @@ serve(async (req) => {
     const finalStatus = results.images.length > 0 ? "completed" : "failed";
     await supabase.from("orders").update({ status: finalStatus, updated_at: new Date().toISOString() }).eq("id", orderId);
 
+    // Trigger delivery email if content was generated
+    if (finalStatus === "completed") {
+      try {
+        const emailUrl = `${SUPABASE_URL}/functions/v1/send-delivery-email`;
+        const emailResponse = await fetch(emailUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({ orderId }),
+        });
+        if (!emailResponse.ok) {
+          const errText = await emailResponse.text();
+          console.error(`Email trigger failed: ${errText}`);
+        } else {
+          console.log(`Delivery email triggered for order ${orderId}`);
+        }
+      } catch (emailError) {
+        console.error("Email trigger error:", emailError);
+      }
+    }
+
     return new Response(JSON.stringify({ success: true, results }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
