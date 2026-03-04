@@ -90,7 +90,7 @@ const Index = () => {
 
   const handleGenComplete = useCallback((results: { images: string[]; video: string | null }) => {
     setGeneratedResults(results);
-    setStep(4);
+    setFinished(true);
   }, []);
 
   if (!started) {
