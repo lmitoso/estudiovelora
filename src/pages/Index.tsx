@@ -5,10 +5,7 @@ import StepIndicator from "@/components/velora/StepIndicator";
 import StepModel from "@/components/velora/StepModel";
 import StepCampaign, { CampaignData } from "@/components/velora/StepCampaign";
 import StepPackage, { PackageData } from "@/components/velora/StepPackage";
-import StepGenerating from "@/components/velora/StepGenerating";
 import StepCheckout from "@/components/velora/StepCheckout";
-import SuccessPage from "@/components/velora/SuccessPage";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 const STEP_LABELS = ["Modelo", "Campanha", "Pacote", "Checkout", "Gerando"];
