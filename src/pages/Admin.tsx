@@ -8,7 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut } from "lucide-react";
+import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 type Order = {
@@ -263,7 +263,22 @@ export default function Admin() {
 
           {/* PEDIDOS TAB */}
           <TabsContent value="pedidos" className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome, e-mail, marca ou WhatsApp..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button variant="outline" size="sm" onClick={() => exportCSV("pedidos")} className="shrink-0">
+                <Download className="h-4 w-4 mr-2" />
+                Exportar CSV
+              </Button>
+            </div>
+            <div className="flex gap-2 flex-wrap">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
