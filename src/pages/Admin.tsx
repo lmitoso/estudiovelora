@@ -133,7 +133,7 @@ export default function Admin() {
     setRetrying(orderId);
     try {
       const res = await supabase.functions.invoke("retry-generations", {
-        body: { orderId },
+        body: { orderId, adminPassword: password },
       });
       if (res.error) throw res.error;
       toast({ title: "Retry iniciado", description: `Pedido ${orderId.slice(0, 8)}... em reprocessamento.` });
