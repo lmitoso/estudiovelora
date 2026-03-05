@@ -120,8 +120,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Validate service role auth
-  if (!validateServiceAuth(req)) {
+  // Validate: service role key OR admin password in body
+  const bodyClone = await req.clone().json().catch(() => ({}));
+  if (!validateServiceAuth(req) && !validateAdminPassword(bodyClone)) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
