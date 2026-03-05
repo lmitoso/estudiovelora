@@ -18,6 +18,11 @@ function validateServiceAuth(req: Request): boolean {
   return token === serviceKey;
 }
 
+function validateAdminPassword(body: any): boolean {
+  const adminPassword = Deno.env.get("ADMIN_PASSWORD") || "";
+  return body?.adminPassword === adminPassword;
+}
+
 async function safeParseJson(response: Response): Promise<any> {
   const text = await response.text();
   try {
