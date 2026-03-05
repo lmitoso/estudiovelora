@@ -22,8 +22,9 @@ const OrderContent = () => {
     if (!orderId) { setError(true); return; }
 
     const fetchContent = async () => {
+      // Use the public view that hides PII
       const { data: order } = await supabase
-        .from("orders")
+        .from("orders_public")
         .select("brand_name, status")
         .eq("id", orderId)
         .single() as { data: { brand_name: string; status: string } | null };
@@ -31,13 +32,16 @@ const OrderContent = () => {
       if (!order) { setError(true); setLoading(false); return; }
       setBrandName(order.brand_name);
 
-      const { data: gens } = await supabase
-        .from("generations")
-        .select("id, type, status, output_url")
-        .eq("order_id", orderId)
-        .order("created_at", { ascending: true });
+      // Fetch generations via edge function (no direct table access)
+      const res = await supabase.functions.invoke("order-content-data", {
+        body: { orderId },
+      });
 
-      setGenerations(gens || []);
+      if (res.error || !res.data?.data) {
+        setGenerations([]);
+      } else {
+        setGenerations(res.data.data);
+      }
       setLoading(false);
     };
 
