@@ -60,8 +60,6 @@ const OrderContent = () => {
           }
         }
       )
-      .subscribe();
-      .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [orderId]);
