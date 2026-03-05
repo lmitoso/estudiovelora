@@ -442,7 +442,13 @@ export default function Admin() {
           </TabsContent>
 
           {/* CLIENTES TAB */}
-          <TabsContent value="clientes">
+          <TabsContent value="clientes" className="space-y-4">
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={() => exportCSV("clientes")}>
+                <Download className="h-4 w-4 mr-2" />
+                Exportar CSV
+              </Button>
+            </div>
             <div className="border border-border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
