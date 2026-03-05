@@ -246,6 +246,10 @@ serve(async (req) => {
 
           const klingData = await safeParseJson(klingResponse);
 
+          // fal.run returns result directly (sync mode)
+          if (klingData?.video?.url) return klingData.video.url;
+
+          // Fallback: queue mode with polling
           if (klingData.request_id) {
             for (let attempt = 0; attempt < 150; attempt++) {
               await new Promise((r) => setTimeout(r, 2000));
@@ -268,7 +272,7 @@ serve(async (req) => {
             }
             throw new Error("Kling video generation timed out");
           }
-          throw new Error("Unexpected Kling response");
+          throw new Error(`Unexpected Kling response: ${JSON.stringify(klingData).substring(0, 200)}`);
         });
 
         results.video = videoUrl;
