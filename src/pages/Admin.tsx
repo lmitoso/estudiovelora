@@ -184,6 +184,34 @@ export default function Admin() {
     return { total, paid, failed, revenue, customers: customers.length };
   }, [orders, customers]);
 
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="bg-card border border-border rounded-lg p-8 w-full max-w-sm space-y-6">
+          <div className="text-center space-y-2">
+            <Lock className="h-10 w-10 mx-auto text-primary" />
+            <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>
+              Painel Admin
+            </h1>
+            <p className="text-sm text-muted-foreground">Digite a senha para acessar</p>
+          </div>
+          <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
+            <Input
+              type="password"
+              placeholder="Senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoFocus
+            />
+            <Button type="submit" className="w-full" disabled={authLoading || !password}>
+              {authLoading ? "Verificando..." : "Entrar"}
+            </Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
