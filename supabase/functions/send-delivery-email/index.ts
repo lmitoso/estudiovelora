@@ -61,8 +61,8 @@ serve(async (req) => {
     }
 
     // Build content link
-    const siteUrl = Deno.env.get("SITE_URL") || `${SUPABASE_URL.replace('.supabase.co', '')}.lovable.app`;
-    const contentLink = `https://id-preview--660d267a-7e7f-4374-9410-dd9bae4b4b2d.lovable.app/order/${orderId}`;
+    const siteUrl = Deno.env.get("SITE_URL") || "https://instant-editorial-ai.lovable.app";
+    const contentLink = `${siteUrl}/order/${orderId}`;
 
     const imageCount = completedGens.filter((g) => g.type === "image").length;
     const videoCount = completedGens.filter((g) => g.type === "video").length;
