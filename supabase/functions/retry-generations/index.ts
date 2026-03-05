@@ -50,7 +50,7 @@ async function withRetry<T>(fn: () => Promise<T>, retries = MAX_RETRIES, baseDel
 
 async function generateVideo(FAL_API_KEY: string, prompt: string, imageUrl: string): Promise<string> {
   const klingResponse = await fetch(
-    `${FAL_API_URL}/fal-ai/kling-video/v2.1/standard/image-to-video`,
+    `${FAL_SYNC_URL}/fal-ai/kling-video/v2.1/standard/image-to-video`,
     {
       method: "POST",
       headers: {
@@ -77,13 +77,13 @@ async function generateVideo(FAL_API_KEY: string, prompt: string, imageUrl: stri
     for (let attempt = 0; attempt < 150; attempt++) {
       await new Promise((r) => setTimeout(r, 2000));
       const statusRes = await fetch(
-        `${FAL_API_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}/status`,
+        `${FAL_SYNC_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}/status`,
         { headers: { Authorization: `Key ${FAL_API_KEY}` } }
       );
       const statusData = await safeParseJson(statusRes);
       if (statusData.status === "COMPLETED") {
         const resultRes = await fetch(
-          `${FAL_API_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}`,
+          `${FAL_SYNC_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}`,
           { headers: { Authorization: `Key ${FAL_API_KEY}` } }
         );
         const videoResult = await safeParseJson(resultRes);
