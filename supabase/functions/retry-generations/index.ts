@@ -137,7 +137,7 @@ serve(async (req) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const body = await req.json().catch(() => ({}));
+    const body = bodyClone;
     const { orderId, generationIds, mode } = body;
 
     // Mode: "failed_videos" — retry specific failed video generations in-place
