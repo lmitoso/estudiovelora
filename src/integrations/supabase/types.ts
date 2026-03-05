@@ -62,6 +62,13 @@ export type Database = {
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "generations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       orders: {
@@ -120,7 +127,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      orders_public: {
+        Row: {
+          brand_name: string | null
+          created_at: string | null
+          id: string | null
+          model_type: string | null
+          photos_qty: number | null
+          status: string | null
+          videos_qty: number | null
+        }
+        Insert: {
+          brand_name?: string | null
+          created_at?: string | null
+          id?: string | null
+          model_type?: string | null
+          photos_qty?: number | null
+          status?: string | null
+          videos_qty?: number | null
+        }
+        Update: {
+          brand_name?: string | null
+          created_at?: string | null
+          id?: string | null
+          model_type?: string | null
+          photos_qty?: number | null
+          status?: string | null
+          videos_qty?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
