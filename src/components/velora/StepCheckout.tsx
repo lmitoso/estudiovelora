@@ -83,18 +83,15 @@ const StepCheckout = ({ total, photos, videos, modelType, campaignData, onBack }
 
     try {
       // Upload piece file if exists
-      let pieceImageUrl: string | undefined;
+      // Upload piece file (stored for internal use, not publicly accessible)
       if (campaignData.pieceFile) {
         const fileName = `${Date.now()}-${campaignData.pieceFile.name}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("product-uploads")
           .upload(fileName, campaignData.pieceFile);
 
-        if (!uploadError && uploadData) {
-          const { data: urlData } = supabase.storage
-            .from("product-uploads")
-            .getPublicUrl(uploadData.path);
-          pieceImageUrl = urlData.publicUrl;
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
         }
       }
 
