@@ -8,7 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
+import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 type Order = {
@@ -58,7 +58,36 @@ export default function Admin() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [generations, setGenerations] = useState<Record<string, Generation[]>>({});
   const [retrying, setRetrying] = useState<string | null>(null);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleLogin = async () => {
+    setAuthLoading(true);
+    try {
+      const res = await supabase.functions.invoke("verify-admin", {
+        body: { password },
+      });
+      if (res.error) throw res.error;
+      if (res.data?.valid) {
+        setAuthenticated(true);
+        sessionStorage.setItem("admin_auth", "true");
+      } else {
+        toast({ title: "Senha incorreta", variant: "destructive" });
+      }
+    } catch (err: any) {
+      toast({ title: "Erro na verificação", description: err.message, variant: "destructive" });
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (sessionStorage.getItem("admin_auth") === "true") {
+      setAuthenticated(true);
+    }
+  }, []);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -154,6 +183,34 @@ export default function Admin() {
     const revenue = orders.filter((o) => o.status !== "pending").reduce((s, o) => s + Number(o.total_price), 0);
     return { total, paid, failed, revenue, customers: customers.length };
   }, [orders, customers]);
+
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="bg-card border border-border rounded-lg p-8 w-full max-w-sm space-y-6">
+          <div className="text-center space-y-2">
+            <Lock className="h-10 w-10 mx-auto text-primary" />
+            <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>
+              Painel Admin
+            </h1>
+            <p className="text-sm text-muted-foreground">Digite a senha para acessar</p>
+          </div>
+          <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
+            <Input
+              type="password"
+              placeholder="Senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoFocus
+            />
+            <Button type="submit" className="w-full" disabled={authLoading || !password}>
+              {authLoading ? "Verificando..." : "Entrar"}
+            </Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
