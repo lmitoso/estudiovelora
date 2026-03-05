@@ -8,7 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock } from "lucide-react";
+import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 type Order = {
@@ -224,10 +224,16 @@ export default function Admin() {
             Painel Admin
           </h1>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchOrders} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-          Atualizar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={fetchOrders} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+            Atualizar
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => { sessionStorage.removeItem("admin_auth"); setAuthenticated(false); }}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Sair
+          </Button>
+        </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
