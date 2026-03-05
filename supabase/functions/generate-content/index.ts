@@ -94,7 +94,7 @@ function buildVideoPrompt(brandName: string): string {
 
 // Generate a single image with fal.ai (with polling)
 async function generateImage(FAL_API_KEY: string, prompt: string): Promise<string> {
-  const falResponse = await fetch(`${FAL_API_URL}/fal-ai/nano-banana-2`, {
+  const falResponse = await fetch(`${FAL_QUEUE_URL}/fal-ai/nano-banana-2`, {
     method: "POST",
     headers: {
       Authorization: `Key ${FAL_API_KEY}`,
@@ -119,13 +119,13 @@ async function generateImage(FAL_API_KEY: string, prompt: string): Promise<strin
     for (let attempt = 0; attempt < 60; attempt++) {
       await new Promise((r) => setTimeout(r, 2000));
       const statusRes = await fetch(
-        `${FAL_API_URL}/fal-ai/nano-banana-2/requests/${falData.request_id}/status`,
+        `${FAL_QUEUE_URL}/fal-ai/nano-banana-2/requests/${falData.request_id}/status`,
         { headers: { Authorization: `Key ${FAL_API_KEY}` } }
       );
       const statusData = await safeParseJson(statusRes);
       if (statusData.status === "COMPLETED") {
         const resultRes = await fetch(
-          `${FAL_API_URL}/fal-ai/nano-banana-2/requests/${falData.request_id}`,
+          `${FAL_QUEUE_URL}/fal-ai/nano-banana-2/requests/${falData.request_id}`,
           { headers: { Authorization: `Key ${FAL_API_KEY}` } }
         );
         const result = await safeParseJson(resultRes);
@@ -223,7 +223,7 @@ serve(async (req) => {
       try {
         const videoUrl = await withRetry(async () => {
           const klingResponse = await fetch(
-            `${FAL_API_URL}/fal-ai/kling-video/v2.1/standard/image-to-video`,
+            `${FAL_SYNC_URL}/fal-ai/kling-video/v2.1/standard/image-to-video`,
             {
               method: "POST",
               headers: {
@@ -250,13 +250,13 @@ serve(async (req) => {
             for (let attempt = 0; attempt < 150; attempt++) {
               await new Promise((r) => setTimeout(r, 2000));
               const statusRes = await fetch(
-                `${FAL_API_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}/status`,
+                `${FAL_QUEUE_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}/status`,
                 { headers: { Authorization: `Key ${FAL_API_KEY}` } }
               );
               const statusData = await safeParseJson(statusRes);
               if (statusData.status === "COMPLETED") {
                 const resultRes = await fetch(
-                  `${FAL_API_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}`,
+                  `${FAL_QUEUE_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}`,
                   { headers: { Authorization: `Key ${FAL_API_KEY}` } }
                 );
                 const videoResult = await safeParseJson(resultRes);
