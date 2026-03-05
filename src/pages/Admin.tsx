@@ -184,6 +184,29 @@ export default function Admin() {
     return { total, paid, failed, revenue, customers: customers.length };
   }, [orders, customers]);
 
+  const exportCSV = (type: "pedidos" | "clientes") => {
+    let csv = "";
+    if (type === "pedidos") {
+      csv = "Data,Nome,Email,WhatsApp,Marca,Modelo,Fotos,Videos,Valor,Status\n";
+      filtered.forEach((o) => {
+        csv += `${new Date(o.created_at).toLocaleDateString("pt-BR")},"${o.customer_name || ""}","${o.email}","${o.whatsapp || ""}","${o.brand_name}","${o.model_type}",${o.photos_qty},${o.videos_qty},${Number(o.total_price).toFixed(2)},${o.status}\n`;
+      });
+    } else {
+      csv = "Nome,Email,WhatsApp,Pedidos,Total Gasto\n";
+      customers.forEach((c) => {
+        csv += `"${c.name || ""}","${c.email}","${c.whatsapp || ""}",${c.orders},${c.total.toFixed(2)}\n`;
+      });
+    }
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `velora-${type}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "CSV exportado com sucesso!" });
+  };
+
   if (!authenticated) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
