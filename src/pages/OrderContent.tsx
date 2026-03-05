@@ -26,7 +26,7 @@ const OrderContent = () => {
         .from("orders")
         .select("brand_name, status")
         .eq("id", orderId)
-        .single();
+        .single() as { data: { brand_name: string; status: string } | null };
 
       if (!order) { setError(true); setLoading(false); return; }
       setBrandName(order.brand_name);

@@ -103,16 +103,17 @@ export default function Admin() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchOrders(); }, []);
+  useEffect(() => { if (authenticated) fetchOrders(); }, [authenticated]);
 
   // Realtime
   useEffect(() => {
+    if (!authenticated) return;
     const channel = supabase
       .channel("admin-orders")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => fetchOrders())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [authenticated]);
 
   const fetchGenerations = async (orderId: string) => {
     if (generations[orderId]) {
@@ -132,7 +133,7 @@ export default function Admin() {
     setRetrying(orderId);
     try {
       const res = await supabase.functions.invoke("retry-generations", {
-        body: { orderId },
+        body: { orderId, adminPassword: password },
       });
       if (res.error) throw res.error;
       toast({ title: "Retry iniciado", description: `Pedido ${orderId.slice(0, 8)}... em reprocessamento.` });

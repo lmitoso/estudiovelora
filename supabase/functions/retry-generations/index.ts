@@ -11,6 +11,18 @@ const FAL_SYNC_URL = "https://fal.run";
 const FAL_QUEUE_URL = "https://queue.fal.run";
 const MAX_RETRIES = 3;
 
+function validateServiceAuth(req: Request): boolean {
+  const auth = req.headers.get("authorization") || "";
+  const token = auth.replace("Bearer ", "");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  return token === serviceKey;
+}
+
+function validateAdminPassword(body: any): boolean {
+  const adminPassword = Deno.env.get("ADMIN_PASSWORD") || "";
+  return body?.adminPassword === adminPassword;
+}
+
 async function safeParseJson(response: Response): Promise<any> {
   const text = await response.text();
   try {
@@ -108,6 +120,15 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Validate: service role key OR admin password in body
+  const bodyClone = await req.clone().json().catch(() => ({}));
+  if (!validateServiceAuth(req) && !validateAdminPassword(bodyClone)) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const FAL_API_KEY = Deno.env.get("FAL_API_KEY");
     if (!FAL_API_KEY) throw new Error("FAL_API_KEY not configured");
@@ -116,7 +137,7 @@ serve(async (req) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const body = await req.json().catch(() => ({}));
+    const body = bodyClone;
     const { orderId, generationIds, mode } = body;
 
     // Mode: "failed_videos" — retry specific failed video generations in-place
