@@ -11,6 +11,13 @@ const FAL_SYNC_URL = "https://fal.run";
 const FAL_QUEUE_URL = "https://queue.fal.run";
 const MAX_RETRIES = 3;
 
+function validateServiceAuth(req: Request): boolean {
+  const auth = req.headers.get("authorization") || "";
+  const token = auth.replace("Bearer ", "");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  return token === serviceKey;
+}
+
 async function safeParseJson(response: Response): Promise<any> {
   const text = await response.text();
   try {
@@ -106,6 +113,14 @@ async function generateVideo(FAL_API_KEY: string, prompt: string, imageUrl: stri
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Validate service role auth
+  if (!validateServiceAuth(req)) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
