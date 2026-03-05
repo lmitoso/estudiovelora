@@ -290,7 +290,6 @@ export default function Admin() {
                     {s === "todos" ? "Todos" : s.replace("_", " ")}
                   </Button>
                 ))}
-              </div>
             </div>
 
             <div className="border border-border rounded-lg overflow-hidden">
