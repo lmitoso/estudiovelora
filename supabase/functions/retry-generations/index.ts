@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 const FAL_SYNC_URL = "https://fal.run";
+const FAL_QUEUE_URL = "https://queue.fal.run";
 const MAX_RETRIES = 3;
 
 async function safeParseJson(response: Response): Promise<any> {
@@ -73,17 +74,21 @@ async function generateVideo(FAL_API_KEY: string, prompt: string, imageUrl: stri
 
   const klingData = await safeParseJson(klingResponse);
 
+  // fal.run returns result directly (sync mode)
+  if (klingData?.video?.url) return klingData.video.url;
+
+  // Fallback: queue mode with polling
   if (klingData.request_id) {
     for (let attempt = 0; attempt < 150; attempt++) {
       await new Promise((r) => setTimeout(r, 2000));
       const statusRes = await fetch(
-        `${FAL_SYNC_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}/status`,
+        `${FAL_QUEUE_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}/status`,
         { headers: { Authorization: `Key ${FAL_API_KEY}` } }
       );
       const statusData = await safeParseJson(statusRes);
       if (statusData.status === "COMPLETED") {
         const resultRes = await fetch(
-          `${FAL_SYNC_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}`,
+          `${FAL_QUEUE_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}`,
           { headers: { Authorization: `Key ${FAL_API_KEY}` } }
         );
         const videoResult = await safeParseJson(resultRes);
@@ -95,7 +100,7 @@ async function generateVideo(FAL_API_KEY: string, prompt: string, imageUrl: stri
     }
     throw new Error("Kling video generation timed out");
   }
-  throw new Error("Unexpected Kling response");
+  throw new Error(`Unexpected Kling response: ${JSON.stringify(klingData).substring(0, 200)}`);
 }
 
 serve(async (req) => {
