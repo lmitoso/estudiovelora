@@ -103,16 +103,17 @@ export default function Admin() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchOrders(); }, []);
+  useEffect(() => { if (authenticated) fetchOrders(); }, [authenticated]);
 
   // Realtime
   useEffect(() => {
+    if (!authenticated) return;
     const channel = supabase
       .channel("admin-orders")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => fetchOrders())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [authenticated]);
 
   const fetchGenerations = async (orderId: string) => {
     if (generations[orderId]) {

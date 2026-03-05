@@ -33,6 +33,14 @@ serve(async (req) => {
       );
     }
 
+    // Validate session belongs to this order
+    if (session.metadata?.order_id !== orderId) {
+      return new Response(
+        JSON.stringify({ success: false, message: "Session/order mismatch" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+      );
+    }
+
     // Update order status to paid
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
