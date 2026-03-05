@@ -47,19 +47,20 @@ const OrderContent = () => {
 
     fetchContent();
 
-    // Realtime updates
+    // Realtime updates - refetch via edge function on any change
     const channel = supabase
       .channel(`order-${orderId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "generations", filter: `order_id=eq.${orderId}` },
-        (payload) => {
-          const updated = payload.new as Generation;
-          setGenerations((prev) => {
-            const exists = prev.find((g) => g.id === updated.id);
-            if (exists) return prev.map((g) => (g.id === updated.id ? updated : g));
-            return [...prev, updated];
+        async () => {
+          const res = await supabase.functions.invoke("order-content-data", {
+            body: { orderId },
           });
+          if (res.data?.data) {
+            setGenerations(res.data.data);
+          }
         }
       )
+      .subscribe();
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
