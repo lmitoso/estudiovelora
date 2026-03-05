@@ -63,16 +63,19 @@ export default function Admin() {
   const [authLoading, setAuthLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  const handleLogin = async (pwd?: string) => {
+    const loginPassword = pwd || password;
+    if (!loginPassword) return;
     setAuthLoading(true);
     try {
       const res = await supabase.functions.invoke("verify-admin", {
-        body: { password },
+        body: { password: loginPassword },
       });
       if (res.error) throw res.error;
       if (res.data?.valid) {
+        setPassword(loginPassword);
         setAuthenticated(true);
-        sessionStorage.setItem("admin_auth", "true");
+        sessionStorage.setItem("admin_pwd", btoa(loginPassword));
       } else {
         toast({ title: "Senha incorreta", variant: "destructive" });
       }
@@ -84,8 +87,15 @@ export default function Admin() {
   };
 
   useEffect(() => {
-    if (sessionStorage.getItem("admin_auth") === "true") {
-      setAuthenticated(true);
+    const stored = sessionStorage.getItem("admin_pwd");
+    if (stored) {
+      try {
+        const decoded = atob(stored);
+        // Re-validate with backend before granting access
+        handleLogin(decoded);
+      } catch {
+        sessionStorage.removeItem("admin_pwd");
+      }
     }
   }, []);
 
@@ -258,7 +268,7 @@ export default function Admin() {
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Atualizar
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => { sessionStorage.removeItem("admin_auth"); setAuthenticated(false); }}>
+          <Button variant="ghost" size="sm" onClick={() => { sessionStorage.removeItem("admin_pwd"); setAuthenticated(false); setPassword(""); }}>
             <LogOut className="h-4 w-4 mr-2" />
             Sair
           </Button>
