@@ -8,7 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut } from "lucide-react";
+import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 type Order = {
@@ -184,6 +184,29 @@ export default function Admin() {
     return { total, paid, failed, revenue, customers: customers.length };
   }, [orders, customers]);
 
+  const exportCSV = (type: "pedidos" | "clientes") => {
+    let csv = "";
+    if (type === "pedidos") {
+      csv = "Data,Nome,Email,WhatsApp,Marca,Modelo,Fotos,Videos,Valor,Status\n";
+      filtered.forEach((o) => {
+        csv += `${new Date(o.created_at).toLocaleDateString("pt-BR")},"${o.customer_name || ""}","${o.email}","${o.whatsapp || ""}","${o.brand_name}","${o.model_type}",${o.photos_qty},${o.videos_qty},${Number(o.total_price).toFixed(2)},${o.status}\n`;
+      });
+    } else {
+      csv = "Nome,Email,WhatsApp,Pedidos,Total Gasto\n";
+      customers.forEach((c) => {
+        csv += `"${c.name || ""}","${c.email}","${c.whatsapp || ""}",${c.orders},${c.total.toFixed(2)}\n`;
+      });
+    }
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `velora-${type}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "CSV exportado com sucesso!" });
+  };
+
   if (!authenticated) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
@@ -263,7 +286,7 @@ export default function Admin() {
 
           {/* PEDIDOS TAB */}
           <TabsContent value="pedidos" className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -273,7 +296,12 @@ export default function Admin() {
                   className="pl-10"
                 />
               </div>
-              <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={() => exportCSV("pedidos")} className="shrink-0">
+                <Download className="h-4 w-4 mr-2" />
+                Exportar CSV
+              </Button>
+            </div>
+            <div className="flex gap-2 flex-wrap">
                 {STATUS_FILTERS.map((s) => (
                   <Button
                     key={s}
@@ -285,7 +313,6 @@ export default function Admin() {
                     {s === "todos" ? "Todos" : s.replace("_", " ")}
                   </Button>
                 ))}
-              </div>
             </div>
 
             <div className="border border-border rounded-lg overflow-hidden">
@@ -415,7 +442,13 @@ export default function Admin() {
           </TabsContent>
 
           {/* CLIENTES TAB */}
-          <TabsContent value="clientes">
+          <TabsContent value="clientes" className="space-y-4">
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={() => exportCSV("clientes")}>
+                <Download className="h-4 w-4 mr-2" />
+                Exportar CSV
+              </Button>
+            </div>
             <div className="border border-border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
