@@ -8,7 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
+import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 type Order = {
@@ -58,7 +58,36 @@ export default function Admin() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [generations, setGenerations] = useState<Record<string, Generation[]>>({});
   const [retrying, setRetrying] = useState<string | null>(null);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleLogin = async () => {
+    setAuthLoading(true);
+    try {
+      const res = await supabase.functions.invoke("verify-admin", {
+        body: { password },
+      });
+      if (res.error) throw res.error;
+      if (res.data?.valid) {
+        setAuthenticated(true);
+        sessionStorage.setItem("admin_auth", "true");
+      } else {
+        toast({ title: "Senha incorreta", variant: "destructive" });
+      }
+    } catch (err: any) {
+      toast({ title: "Erro na verificação", description: err.message, variant: "destructive" });
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (sessionStorage.getItem("admin_auth") === "true") {
+      setAuthenticated(true);
+    }
+  }, []);
 
   const fetchOrders = async () => {
     setLoading(true);
