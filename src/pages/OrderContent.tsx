@@ -22,8 +22,9 @@ const OrderContent = () => {
     if (!orderId) { setError(true); return; }
 
     const fetchContent = async () => {
+      // Use the public view that hides PII
       const { data: order } = await supabase
-        .from("orders")
+        .from("orders_public")
         .select("brand_name, status")
         .eq("id", orderId)
         .single() as { data: { brand_name: string; status: string } | null };
@@ -31,32 +32,34 @@ const OrderContent = () => {
       if (!order) { setError(true); setLoading(false); return; }
       setBrandName(order.brand_name);
 
-      const { data: gens } = await supabase
-        .from("generations")
-        .select("id, type, status, output_url")
-        .eq("order_id", orderId)
-        .order("created_at", { ascending: true });
+      // Fetch generations via edge function (no direct table access)
+      const res = await supabase.functions.invoke("order-content-data", {
+        body: { orderId },
+      });
 
-      setGenerations(gens || []);
+      if (res.error || !res.data?.data) {
+        setGenerations([]);
+      } else {
+        setGenerations(res.data.data);
+      }
       setLoading(false);
     };
 
     fetchContent();
 
-    // Realtime updates
+    // Realtime updates - refetch via edge function on any change
     const channel = supabase
       .channel(`order-${orderId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "generations", filter: `order_id=eq.${orderId}` },
-        (payload) => {
-          const updated = payload.new as Generation;
-          setGenerations((prev) => {
-            const exists = prev.find((g) => g.id === updated.id);
-            if (exists) return prev.map((g) => (g.id === updated.id ? updated : g));
-            return [...prev, updated];
+        async () => {
+          const res = await supabase.functions.invoke("order-content-data", {
+            body: { orderId },
           });
+          if (res.data?.data) {
+            setGenerations(res.data.data);
+          }
         }
       )
-      .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [orderId]);

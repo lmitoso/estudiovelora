@@ -91,14 +91,14 @@ export default function Admin() {
 
   const fetchOrders = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) {
-      toast({ title: "Erro ao carregar pedidos", description: error.message, variant: "destructive" });
-    } else {
-      setOrders(data || []);
+    try {
+      const res = await supabase.functions.invoke("admin-data", {
+        body: { adminPassword: password, action: "orders" },
+      });
+      if (res.error) throw res.error;
+      setOrders(res.data?.data || []);
+    } catch (err: any) {
+      toast({ title: "Erro ao carregar pedidos", description: err.message, variant: "destructive" });
     }
     setLoading(false);
   };
@@ -120,13 +120,16 @@ export default function Admin() {
       setExpandedOrder(expandedOrder === orderId ? null : orderId);
       return;
     }
-    const { data } = await supabase
-      .from("generations")
-      .select("*")
-      .eq("order_id", orderId)
-      .order("created_at", { ascending: true });
-    setGenerations((prev) => ({ ...prev, [orderId]: data || [] }));
-    setExpandedOrder(orderId);
+    try {
+      const res = await supabase.functions.invoke("admin-data", {
+        body: { adminPassword: password, action: "generations", orderId },
+      });
+      if (res.error) throw res.error;
+      setGenerations((prev) => ({ ...prev, [orderId]: res.data?.data || [] }));
+      setExpandedOrder(orderId);
+    } catch (err: any) {
+      toast({ title: "Erro ao carregar gerações", description: err.message, variant: "destructive" });
+    }
   };
 
   const handleRetry = async (orderId: string) => {
@@ -137,9 +140,11 @@ export default function Admin() {
       });
       if (res.error) throw res.error;
       toast({ title: "Retry iniciado", description: `Pedido ${orderId.slice(0, 8)}... em reprocessamento.` });
-      // Refresh generations
-      const { data } = await supabase.from("generations").select("*").eq("order_id", orderId).order("created_at", { ascending: true });
-      setGenerations((prev) => ({ ...prev, [orderId]: data || [] }));
+      // Refresh generations via edge function
+      const genRes = await supabase.functions.invoke("admin-data", {
+        body: { adminPassword: password, action: "generations", orderId },
+      });
+      setGenerations((prev) => ({ ...prev, [orderId]: genRes.data?.data || [] }));
       fetchOrders();
     } catch (err: any) {
       toast({ title: "Erro no retry", description: err.message || "Erro desconhecido", variant: "destructive" });
