@@ -112,7 +112,7 @@ async function generateImage(FAL_API_KEY: string, prompt: string): Promise<strin
     throw new Error(`fal.ai error [${falResponse.status}]: ${errText}`);
   }
 
-  const falData = await falResponse.json();
+  const falData = await safeParseJson(falResponse);
 
   if (falData.request_id) {
     for (let attempt = 0; attempt < 60; attempt++) {
@@ -121,13 +121,13 @@ async function generateImage(FAL_API_KEY: string, prompt: string): Promise<strin
         `${FAL_API_URL}/fal-ai/nano-banana-2/requests/${falData.request_id}/status`,
         { headers: { Authorization: `Key ${FAL_API_KEY}` } }
       );
-      const statusData = await statusRes.json();
+      const statusData = await safeParseJson(statusRes);
       if (statusData.status === "COMPLETED") {
         const resultRes = await fetch(
           `${FAL_API_URL}/fal-ai/nano-banana-2/requests/${falData.request_id}`,
           { headers: { Authorization: `Key ${FAL_API_KEY}` } }
         );
-        const result = await resultRes.json();
+        const result = await safeParseJson(resultRes);
         const url = result.images?.[0]?.url;
         if (url) return url;
         throw new Error("No image URL in completed result");
@@ -243,7 +243,7 @@ serve(async (req) => {
             throw new Error(`Kling error [${klingResponse.status}]: ${errText}`);
           }
 
-          const klingData = await klingResponse.json();
+          const klingData = await safeParseJson(klingResponse);
 
           if (klingData.request_id) {
             for (let attempt = 0; attempt < 150; attempt++) {
@@ -252,13 +252,13 @@ serve(async (req) => {
                 `${FAL_API_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}/status`,
                 { headers: { Authorization: `Key ${FAL_API_KEY}` } }
               );
-              const statusData = await statusRes.json();
+              const statusData = await safeParseJson(statusRes);
               if (statusData.status === "COMPLETED") {
                 const resultRes = await fetch(
                   `${FAL_API_URL}/fal-ai/kling-video/v2.1/standard/image-to-video/requests/${klingData.request_id}`,
                   { headers: { Authorization: `Key ${FAL_API_KEY}` } }
                 );
-                const videoResult = await resultRes.json();
+                const videoResult = await safeParseJson(resultRes);
                 if (videoResult?.video?.url) return videoResult.video.url;
                 throw new Error("No video URL in completed result");
               } else if (statusData.status === "FAILED") {
