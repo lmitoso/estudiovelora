@@ -10,6 +10,27 @@ const corsHeaders = {
 const FAL_API_URL = "https://queue.fal.run";
 const MAX_RETRIES = 3;
 
+// Robust JSON parsing — handles malformed responses from fal.ai
+async function safeParseJson(response: Response): Promise<any> {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    // Try to extract JSON object/array from the response
+    const jsonStart = text.search(/[\{\[]/);
+    const isArray = jsonStart !== -1 && text[jsonStart] === '[';
+    const jsonEnd = text.lastIndexOf(isArray ? ']' : '}');
+    if (jsonStart === -1 || jsonEnd === -1) {
+      throw new Error(`No valid JSON found in response: ${text.substring(0, 200)}`);
+    }
+    let cleaned = text.substring(jsonStart, jsonEnd + 1)
+      .replace(/,\s*}/g, '}')
+      .replace(/,\s*]/g, ']')
+      .replace(/[\x00-\x1F\x7F]/g, '');
+    return JSON.parse(cleaned);
+  }
+}
+
 // Retry helper with exponential backoff
 async function withRetry<T>(fn: () => Promise<T>, retries = MAX_RETRIES, baseDelay = 2000): Promise<T> {
   let lastError: Error | null = null;
