@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Flame, GraduationCap, Bot, Camera, Clapperboard, Package, Rocket, BookOpen, Check, Star } from "lucide-react";
 
-const PAYMENT_URL = "#"; // placeholder — replace with real checkout link
+const PAYMENT_URL = "https://pay.kiwify.com.br/G0oqvsb";
 
 const fadeUp = {
   initial: { opacity: 0, y: 20, filter: "blur(4px)" },
