@@ -8,7 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut, Download } from "lucide-react";
+import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut, Download, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 type Order = {
@@ -38,6 +38,15 @@ type Generation = {
   completed_at: string | null;
 };
 
+type Lead = {
+  id: string;
+  name: string;
+  email: string;
+  whatsapp: string | null;
+  source: string | null;
+  created_at: string;
+};
+
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
   paid: "bg-blue-500/20 text-blue-400 border-blue-500/30",
@@ -46,13 +55,16 @@ const statusColors: Record<string, string> = {
   generation_failed: "bg-destructive/20 text-destructive border-destructive/30",
   failed: "bg-destructive/20 text-destructive border-destructive/30",
   queued: "bg-muted text-muted-foreground border-border",
+  lead: "bg-primary/20 text-primary border-primary/30",
 };
 
-const STATUS_FILTERS = ["todos", "pending", "paid", "processing", "completed", "generation_failed"];
+const STATUS_FILTERS = ["todos", "pending", "paid", "processing", "completed", "generation_failed", "lead"];
 
 export default function Admin() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [leadsLoading, setLeadsLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
@@ -90,9 +102,7 @@ export default function Admin() {
     const stored = sessionStorage.getItem("admin_pwd");
     if (stored) {
       try {
-        const decoded = atob(stored);
-        // Re-validate with backend before granting access
-        handleLogin(decoded);
+        handleLogin(atob(stored));
       } catch {
         sessionStorage.removeItem("admin_pwd");
       }
@@ -113,14 +123,33 @@ export default function Admin() {
     setLoading(false);
   };
 
-  useEffect(() => { if (authenticated) fetchOrders(); }, [authenticated]);
+  const fetchLeads = async () => {
+    setLeadsLoading(true);
+    try {
+      const res = await supabase.functions.invoke("admin-data", {
+        body: { adminPassword: password, action: "leads" },
+      });
+      if (res.error) throw res.error;
+      setLeads(res.data?.data || []);
+    } catch (err: any) {
+      toast({ title: "Erro ao carregar leads", description: err.message, variant: "destructive" });
+    }
+    setLeadsLoading(false);
+  };
 
-  // Realtime
+  useEffect(() => {
+    if (authenticated) {
+      fetchOrders();
+      fetchLeads();
+    }
+  }, [authenticated]);
+
   useEffect(() => {
     if (!authenticated) return;
     const channel = supabase
       .channel("admin-orders")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => fetchOrders())
+      .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, () => fetchLeads())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [authenticated]);
@@ -150,7 +179,6 @@ export default function Admin() {
       });
       if (res.error) throw res.error;
       toast({ title: "Retry iniciado", description: `Pedido ${orderId.slice(0, 8)}... em reprocessamento.` });
-      // Refresh generations via edge function
       const genRes = await supabase.functions.invoke("admin-data", {
         body: { adminPassword: password, action: "generations", orderId },
       });
@@ -176,7 +204,6 @@ export default function Admin() {
     });
   }, [orders, statusFilter, search]);
 
-  // Customers aggregation
   const customers = useMemo(() => {
     const map: Record<string, { name: string | null; whatsapp: string | null; email: string; orders: number; total: number }> = {};
     orders.forEach((o) => {
@@ -191,26 +218,30 @@ export default function Admin() {
     return Object.values(map).sort((a, b) => b.total - a.total);
   }, [orders]);
 
-  // Dashboard metrics
   const metrics = useMemo(() => {
     const total = orders.length;
     const paid = orders.filter((o) => o.status !== "pending").length;
     const failed = orders.filter((o) => o.status === "generation_failed").length;
     const revenue = orders.filter((o) => o.status !== "pending").reduce((s, o) => s + Number(o.total_price), 0);
-    return { total, paid, failed, revenue, customers: customers.length };
-  }, [orders, customers]);
+    return { total, paid, failed, revenue, customers: customers.length, leads: leads.length };
+  }, [orders, customers, leads]);
 
-  const exportCSV = (type: "pedidos" | "clientes") => {
+  const exportCSV = (type: "pedidos" | "clientes" | "leads") => {
     let csv = "";
     if (type === "pedidos") {
       csv = "Data,Nome,Email,WhatsApp,Marca,Modelo,Fotos,Videos,Valor,Status\n";
       filtered.forEach((o) => {
         csv += `${new Date(o.created_at).toLocaleDateString("pt-BR")},"${o.customer_name || ""}","${o.email}","${o.whatsapp || ""}","${o.brand_name}","${o.model_type}",${o.photos_qty},${o.videos_qty},${Number(o.total_price).toFixed(2)},${o.status}\n`;
       });
-    } else {
+    } else if (type === "clientes") {
       csv = "Nome,Email,WhatsApp,Pedidos,Total Gasto\n";
       customers.forEach((c) => {
         csv += `"${c.name || ""}","${c.email}","${c.whatsapp || ""}",${c.orders},${c.total.toFixed(2)}\n`;
+      });
+    } else {
+      csv = "Data,Nome,Email,WhatsApp,Fonte\n";
+      leads.forEach((l) => {
+        csv += `${new Date(l.created_at).toLocaleDateString("pt-BR")},"${l.name}","${l.email}","${l.whatsapp || ""}","${l.source || ""}"\n`;
       });
     }
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -253,18 +284,17 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
       <header className="border-b border-border px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>
-            Painel Admin
+            Painel CRM
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchOrders} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={() => { fetchOrders(); fetchLeads(); }} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Atualizar
           </Button>
@@ -277,8 +307,9 @@ export default function Admin() {
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {/* Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           {[
+            { label: "Leads", value: metrics.leads },
             { label: "Pedidos", value: metrics.total },
             { label: "Pagos", value: metrics.paid },
             { label: "Falhados", value: metrics.failed },
@@ -294,23 +325,70 @@ export default function Admin() {
           ))}
         </div>
 
-        <Tabs defaultValue="pedidos">
+        <Tabs defaultValue="leads">
           <TabsList className="bg-card border border-border">
+            <TabsTrigger value="leads">
+              <Users className="h-4 w-4 mr-1.5" />
+              Leads
+            </TabsTrigger>
             <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
             <TabsTrigger value="clientes">Clientes</TabsTrigger>
           </TabsList>
+
+          {/* LEADS TAB */}
+          <TabsContent value="leads" className="space-y-4">
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={() => exportCSV("leads")}>
+                <Download className="h-4 w-4 mr-2" />
+                Exportar CSV
+              </Button>
+            </div>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-card">
+                    <TableHead>Data</TableHead>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>E-mail</TableHead>
+                    <TableHead>WhatsApp</TableHead>
+                    <TableHead>Fonte</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {leadsLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">Carregando...</TableCell>
+                    </TableRow>
+                  ) : leads.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">Nenhum lead capturado ainda.</TableCell>
+                    </TableRow>
+                  ) : (
+                    leads.map((l) => (
+                      <TableRow key={l.id}>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                          {new Date(l.created_at).toLocaleDateString("pt-BR")}
+                        </TableCell>
+                        <TableCell className="font-medium text-sm">{l.name}</TableCell>
+                        <TableCell className="text-sm">{l.email}</TableCell>
+                        <TableCell className="text-sm">{l.whatsapp || "—"}</TableCell>
+                        <TableCell>
+                          <Badge className="text-[10px] bg-primary/20 text-primary border-primary/30">{l.source || "campanha"}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
 
           {/* PEDIDOS TAB */}
           <TabsContent value="pedidos" className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome, e-mail, marca ou WhatsApp..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10"
-                />
+                <Input placeholder="Buscar por nome, e-mail, marca ou WhatsApp..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
               </div>
               <Button variant="outline" size="sm" onClick={() => exportCSV("pedidos")} className="shrink-0">
                 <Download className="h-4 w-4 mr-2" />
@@ -318,19 +396,12 @@ export default function Admin() {
               </Button>
             </div>
             <div className="flex gap-2 flex-wrap">
-                {STATUS_FILTERS.map((s) => (
-                  <Button
-                    key={s}
-                    variant={statusFilter === s ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setStatusFilter(s)}
-                    className="capitalize text-xs"
-                  >
-                    {s === "todos" ? "Todos" : s.replace("_", " ")}
-                  </Button>
-                ))}
+              {STATUS_FILTERS.map((s) => (
+                <Button key={s} variant={statusFilter === s ? "default" : "outline"} size="sm" onClick={() => setStatusFilter(s)} className="capitalize text-xs">
+                  {s === "todos" ? "Todos" : s.replace("_", " ")}
+                </Button>
+              ))}
             </div>
-
             <div className="border border-border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
@@ -349,66 +420,34 @@ export default function Admin() {
                 </TableHeader>
                 <TableBody>
                   {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
-                        Carregando...
-                      </TableCell>
-                    </TableRow>
+                    <TableRow><TableCell colSpan={10} className="text-center py-12 text-muted-foreground">Carregando...</TableCell></TableRow>
                   ) : filtered.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
-                        Nenhum pedido encontrado.
-                      </TableCell>
-                    </TableRow>
+                    <TableRow><TableCell colSpan={10} className="text-center py-12 text-muted-foreground">Nenhum pedido encontrado.</TableCell></TableRow>
                   ) : (
                     filtered.map((order) => (
                       <>
-                        <TableRow
-                          key={order.id}
-                          className="cursor-pointer hover:bg-muted/30"
-                          onClick={() => fetchGenerations(order.id)}
-                        >
+                        <TableRow key={order.id} className="cursor-pointer hover:bg-muted/30" onClick={() => fetchGenerations(order.id)}>
                           <TableCell>
-                            {expandedOrder === order.id ? (
-                              <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                            )}
+                            {expandedOrder === order.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                           </TableCell>
-                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                            {new Date(order.created_at).toLocaleDateString("pt-BR")}
-                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{new Date(order.created_at).toLocaleDateString("pt-BR")}</TableCell>
                           <TableCell>
                             <div>
                               <p className="font-medium text-sm">{order.customer_name || "—"}</p>
                               <p className="text-xs text-muted-foreground">{order.email}</p>
                             </div>
                           </TableCell>
-                          <TableCell className="hidden md:table-cell text-sm">
-                            {order.whatsapp || "—"}
-                          </TableCell>
+                          <TableCell className="hidden md:table-cell text-sm">{order.whatsapp || "—"}</TableCell>
                           <TableCell className="hidden md:table-cell text-sm">{order.brand_name}</TableCell>
                           <TableCell className="hidden lg:table-cell text-sm capitalize">{order.model_type}</TableCell>
-                          <TableCell className="hidden lg:table-cell text-sm">
-                            {order.photos_qty}F {order.videos_qty}V
-                          </TableCell>
-                          <TableCell className="text-sm font-medium">
-                            R$ {Number(order.total_price).toFixed(2)}
+                          <TableCell className="hidden lg:table-cell text-sm">{order.photos_qty}F {order.videos_qty}V</TableCell>
+                          <TableCell className="text-sm font-medium">R$ {Number(order.total_price).toFixed(2)}</TableCell>
+                          <TableCell>
+                            <Badge className={`text-[10px] ${statusColors[order.status] || ""}`}>{order.status.replace("_", " ")}</Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge className={`text-[10px] ${statusColors[order.status] || ""}`}>
-                              {order.status.replace("_", " ")}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {(order.status === "generation_failed") && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-xs"
-                                disabled={retrying === order.id}
-                                onClick={(e) => { e.stopPropagation(); handleRetry(order.id); }}
-                              >
+                            {order.status === "generation_failed" && (
+                              <Button variant="outline" size="sm" className="text-xs" disabled={retrying === order.id} onClick={(e) => { e.stopPropagation(); handleRetry(order.id); }}>
                                 <RefreshCw className={`h-3 w-3 mr-1 ${retrying === order.id ? "animate-spin" : ""}`} />
                                 Retry
                               </Button>
@@ -433,9 +472,7 @@ export default function Admin() {
                                       <Badge className={`text-[10px] ${statusColors[g.status] || ""}`}>{g.status}</Badge>
                                       <span className="capitalize text-muted-foreground">{g.type}</span>
                                       {g.output_url && (
-                                        <a href={g.output_url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-xs">
-                                          Ver resultado
-                                        </a>
+                                        <a href={g.output_url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-xs">Ver resultado</a>
                                       )}
                                       {g.error_message && (
                                         <span className="text-destructive text-xs truncate max-w-xs">{g.error_message}</span>
@@ -478,11 +515,7 @@ export default function Admin() {
                 </TableHeader>
                 <TableBody>
                   {customers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                        Nenhum cliente encontrado.
-                      </TableCell>
-                    </TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground">Nenhum cliente encontrado.</TableCell></TableRow>
                   ) : (
                     customers.map((c) => (
                       <TableRow key={c.email}>
