@@ -15,7 +15,6 @@ serve(async (req) => {
   try {
     const { adminPassword, action, orderId } = await req.json();
 
-    // Validate admin password
     const expectedPassword = Deno.env.get("ADMIN_PASSWORD") || "";
     if (!adminPassword || adminPassword !== expectedPassword) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -29,7 +28,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Fetch all orders (admin only)
     if (action === "orders") {
       const { data, error } = await supabase
         .from("orders")
@@ -42,13 +40,24 @@ serve(async (req) => {
       });
     }
 
-    // Fetch generations for a specific order
     if (action === "generations" && orderId) {
       const { data, error } = await supabase
         .from("generations")
         .select("*")
         .eq("order_id", orderId)
         .order("created_at", { ascending: true });
+      if (error) throw new Error(error.message);
+      return new Response(JSON.stringify({ data }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "leads") {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("*")
+        .order("created_at", { ascending: false });
       if (error) throw new Error(error.message);
       return new Response(JSON.stringify({ data }), {
         status: 200,
