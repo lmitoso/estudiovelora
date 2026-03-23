@@ -1,51 +1,53 @@
 
 
-## Plano: Transformar em CRM de Captura de Leads + Landing Page de Curso
+## Plano: Aprimorar Landing Page /aprender
 
-### Resumo
+### Mudanças no `src/pages/Aprender.tsx`
 
-Substituir o funil de geração de conteúdo por IA por dois fluxos:
-1. **"Criar minha campanha"** → Formulário simples (nome, email, WhatsApp) → Mensagem de confirmação → Dados vão para o CRM admin
-2. **"Aprender"** → Landing page de venda do curso (R$497) com toda a estrutura fornecida
+#### 1. Pricing — Ancoragem de preço e urgência
+- Preço "normal" de **R$4.000** riscado
+- Preço promocional **R$497** para os primeiros 50 alunos
+- Badge: "Para os primeiros 50 alunos do Método Velora"
+- Texto: "Depois, o preço volta para R$4.000"
 
-### Mudanças
+#### 2. Selo de Garantia de 7 dias
+- Seção com ícone de escudo
+- "Garantia incondicional de 7 dias. Acesse o curso, e se não for o que esperava, peça reembolso completo. A compra é feita pela Kiwify, que garante todos os direitos do consumidor."
 
-#### 1. Reescrever a página inicial (`src/pages/Index.tsx`)
-- Manter o hero atual (VELORA, animações, estética)
-- Remover todo o fluxo multi-step (modelo, campanha, pacote, checkout)
-- **Botão "Criar minha campanha"** → Mostra formulário inline com 3 campos: Nome, Email, WhatsApp
-- Ao submeter, insere na tabela `orders` (reaproveitando os campos `customer_name`, `email`, `whatsapp`) com status `lead`
-- Após envio, exibe mensagem de confirmação: "Recebemos seus dados! Um de nossos diretores de arte entrará em contato pelo WhatsApp. Aguarde!"
-- **Botão "Aprender"** → Navega para `/aprender`
-- Remover o texto "A partir de R$27 por foto" e substituir por algo alinhado ao novo posicionamento
+#### 3. FAQ — Perguntas Frequentes
+- Accordion com objeções de compra:
+  - "Preciso ter experiência com IA?"
+  - "Funciona para qualquer nicho?"
+  - "Quanto tempo tenho de acesso?"
+  - "E se eu não gostar?"
+  - "Preciso de equipamentos caros?"
+  - "Como recebo o acesso?"
 
-#### 2. Criar nova página `/aprender` (`src/pages/Aprender.tsx`)
-- Landing page longa com toda a estrutura de copy fornecida
-- Seções: Hero, A Nova Era, O Método, Conteúdo do Curso, Oportunidade, Bônus (6 bônus), Preço, CTA final
-- Visual alinhado ao design system Velora (dark, gold, tipografia editorial)
-- Botões "COMEÇAR AGORA" abrirão link externo de pagamento (placeholder configurável)
-- Responsiva para mobile
+#### 4. Botão WhatsApp flutuante
+- Fixo no canto inferior direito, cor verde
+- Link: `https://wa.me/5598991722040?text=Olá, quero saber mais sobre o Método Velora`
 
-#### 3. Criar migration para tabela `leads`
-- Nova tabela `leads` com: `id`, `name`, `email`, `whatsapp`, `created_at`, `source` (ex: "campanha", "aprender")
-- RLS: INSERT público, SELECT bloqueado (acesso só via Edge Function admin)
-- Separar leads do fluxo de orders para não poluir a tabela existente
+#### 5. Sem galeria visual
+- Sem fotos de exemplo e sem vídeos — página focada em copy e conversão
 
-#### 4. Atualizar o Admin (`src/pages/Admin.tsx`)
-- Adicionar nova aba "Leads" com tabela mostrando: Nome, Email, WhatsApp, Data, Fonte
-- Manter abas existentes (Pedidos, Clientes) para dados históricos
-- Exportação CSV para leads
+#### 6. Estrutura final
+```text
+Hero
+A Nova Era
+O Problema
+O Método
+Curso (conteúdo)
+Oportunidade
+Bônus
+Garantia 7 dias
+Preço (R$4.000 → R$497 para 50 primeiros)
+FAQ
+CTA Final
+Botão WhatsApp (flutuante)
+```
 
-#### 5. Atualizar rotas (`src/App.tsx`)
-- Adicionar rota `/aprender` → `Aprender`
-
-#### 6. Limpeza
-- Os componentes step (StepModel, StepCampaign, StepPackage, StepCheckout, StepIndicator) podem ser mantidos por enquanto mas não serão mais usados na Index
-
-### Detalhes Tecnicosx
-
-- **Tabela `leads`**: campos `name text`, `email text not null`, `whatsapp text`, `source text default 'campanha'`, `created_at timestamptz default now()`
-- **RLS**: `INSERT` público (`WITH CHECK(true)`), `SELECT` bloqueado (`USING(false)`)
-- **Admin**: Edge Function `admin-data` será atualizada para também retornar leads
-- **Landing page**: Componente React puro, sem backend, apenas scroll com seções e CTAs
+### Detalhes Técnicos
+- FAQ usa componente Accordion existente
+- WhatsApp: `5598991722040`
+- Arquivo editado: `src/pages/Aprender.tsx`
 
