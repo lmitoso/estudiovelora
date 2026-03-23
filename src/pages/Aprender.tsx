@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Flame, GraduationCap, Bot, Camera, Clapperboard, Package, Rocket, BookOpen, Check, Star } from "lucide-react";
+import { ArrowLeft, Flame, GraduationCap, Bot, Camera, Clapperboard, Package, Rocket, BookOpen, Check, Star, Shield, MessageCircle } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const PAYMENT_URL = "https://pay.kiwify.com.br/G0oqvsb";
+const WHATSAPP_URL = "https://wa.me/5598991722040?text=Ol%C3%A1%2C%20quero%20saber%20mais%20sobre%20o%20M%C3%A9todo%20Velora";
 
 const fadeUp = {
   initial: { opacity: 0, y: 20, filter: "blur(4px)" },
@@ -58,6 +60,33 @@ const BonusCard = ({ icon: Icon, number, title, description, details, value }: {
   </motion.div>
 );
 
+const faqItems = [
+  {
+    question: "Preciso ter experiência com IA?",
+    answer: "Não. O curso foi desenhado para iniciantes e para quem já tem algum contato com IA. Você vai aprender do zero como pensar visualmente e usar as ferramentas certas para criar conteúdos profissionais."
+  },
+  {
+    question: "Funciona para qualquer nicho?",
+    answer: "Sim. O método é sobre criação visual e direção de arte — funciona para moda, gastronomia, cosméticos, tecnologia, imóveis, e-commerce ou qualquer segmento que precise de conteúdo visual de alto impacto."
+  },
+  {
+    question: "Quanto tempo tenho de acesso?",
+    answer: "Acesso vitalício. Você compra uma vez e tem acesso para sempre, incluindo todas as atualizações futuras do curso e dos bônus."
+  },
+  {
+    question: "E se eu não gostar?",
+    answer: "Você tem 7 dias de garantia incondicional. Se por qualquer motivo sentir que o curso não é para você, basta solicitar o reembolso completo diretamente pela Kiwify. Sem perguntas, sem burocracia."
+  },
+  {
+    question: "Preciso de equipamentos caros?",
+    answer: "Não. Você só precisa de um computador ou celular com acesso à internet. Todas as ferramentas que usamos no curso são acessíveis e muitas delas são gratuitas ou de baixo custo."
+  },
+  {
+    question: "Como recebo o acesso?",
+    answer: "Imediatamente após a confirmação do pagamento, você recebe um email da Kiwify com seus dados de acesso à área de membros. É instantâneo para pagamentos com cartão e PIX."
+  },
+];
+
 export default function Aprender() {
   const navigate = useNavigate();
 
@@ -85,7 +114,7 @@ export default function Aprender() {
           {...fadeUp}
           transition={{ ...fadeUp.transition, delay: 0.1 }}
           className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light leading-[1.1] text-foreground mb-8"
-          style={{ textWrap: "balance" }}
+          style={{ textWrap: "balance" } as React.CSSProperties}
         >
           Crie fotos e vídeos que parecem campanhas de grandes marcas
         </motion.h1>
@@ -243,55 +272,33 @@ export default function Aprender() {
         </motion.p>
 
         <div className="grid md:grid-cols-2 gap-6">
-          <BonusCard
-            icon={Bot}
-            number={1}
-            title="Agente IA Diretor de Arte Velora"
-            description="Um agente treinado para ajudar você a criar:"
-            details={["campanhas visuais", "conceitos criativos", "posicionamento visual", "estética de marca"]}
-            value="R$1.497"
-          />
-          <BonusCard
-            icon={Camera}
-            number={2}
-            title="Agente Criador de Prompts Fotográficos"
-            description="Crie prompts profissionais de fotografia editorial."
-            details={["fotos de produto", "campanhas de moda", "editoriais de marca"]}
-            value="R$997"
-          />
-          <BonusCard
-            icon={Clapperboard}
-            number={3}
-            title="Agente de Prompts Cinematográficos"
-            description="Crie vídeos cinematográficos com IA."
-            details={["reels", "anúncios", "campanhas visuais"]}
-            value="R$997"
-          />
-          <BonusCard
-            icon={Package}
-            number={4}
-            title="Pack com 50 Prompts Profissionais"
-            description="50 prompts prontos para criar conteúdos visuais impactantes. Você só precisa adaptar para seu projeto."
-            details={[]}
-            value="R$497"
-          />
-          <BonusCard
-            icon={Rocket}
-            number={5}
-            title="Mini-Curso: Como Lançar uma Marca"
-            description="Aprenda como estruturar uma marca com percepção de valor alta."
-            details={["posicionamento", "identidade visual", "estratégia de conteúdo", "comunicação"]}
-            value="R$1.297"
-          />
-          <BonusCard
-            icon={BookOpen}
-            number={6}
-            title="Biblioteca Velora — 15 eBooks"
-            description="Materiais usados internamente para desenvolver campanhas e projetos."
-            details={["direção de arte", "branding visual", "psicologia do design", "storytelling visual", "estética de campanhas", "criação de identidade visual"]}
-            value="R$2.497"
-          />
+          <BonusCard icon={Bot} number={1} title="Agente IA Diretor de Arte Velora" description="Um agente treinado para ajudar você a criar:" details={["campanhas visuais", "conceitos criativos", "posicionamento visual", "estética de marca"]} value="R$1.497" />
+          <BonusCard icon={Camera} number={2} title="Agente Criador de Prompts Fotográficos" description="Crie prompts profissionais de fotografia editorial." details={["fotos de produto", "campanhas de moda", "editoriais de marca"]} value="R$997" />
+          <BonusCard icon={Clapperboard} number={3} title="Agente de Prompts Cinematográficos" description="Crie vídeos cinematográficos com IA." details={["reels", "anúncios", "campanhas visuais"]} value="R$997" />
+          <BonusCard icon={Package} number={4} title="Pack com 50 Prompts Profissionais" description="50 prompts prontos para criar conteúdos visuais impactantes. Você só precisa adaptar para seu projeto." details={[]} value="R$497" />
+          <BonusCard icon={Rocket} number={5} title="Mini-Curso: Como Lançar uma Marca" description="Aprenda como estruturar uma marca com percepção de valor alta." details={["posicionamento", "identidade visual", "estratégia de conteúdo", "comunicação"]} value="R$1.297" />
+          <BonusCard icon={BookOpen} number={6} title="Biblioteca Velora — 15 eBooks" description="Materiais usados internamente para desenvolver campanhas e projetos." details={["direção de arte", "branding visual", "psicologia do design", "storytelling visual", "estética de campanhas", "criação de identidade visual"]} value="R$2.497" />
         </div>
+      </section>
+
+      <SectionDivider />
+
+      {/* GARANTIA */}
+      <section className="px-6 max-w-3xl mx-auto pb-20 md:pb-28 text-center">
+        <motion.div {...fadeUp} className="velora-card p-8 md:p-12 max-w-lg mx-auto">
+          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+            <Shield className="h-8 w-8 text-primary" />
+          </div>
+          <h2 className="font-display text-2xl md:text-3xl text-foreground mb-4">
+            Garantia Incondicional de 7 Dias
+          </h2>
+          <p className="text-sm text-foreground/70 font-body leading-relaxed mb-4">
+            Acesse o curso, explore os materiais e, se não for o que você esperava, peça o reembolso completo em até 7 dias. Sem perguntas, sem burocracia.
+          </p>
+          <p className="text-xs text-muted-foreground font-body">
+            A compra é feita pela <strong className="text-foreground/80">Kiwify</strong>, plataforma que garante todos os direitos do consumidor e processa o reembolso automaticamente.
+          </p>
+        </motion.div>
       </section>
 
       <SectionDivider />
@@ -318,15 +325,20 @@ export default function Aprender() {
             </div>
           ))}
           <div className="border-t border-border pt-4 flex justify-between items-center">
-            <span className="text-sm text-muted-foreground font-body">Valor total</span>
-            <span className="text-foreground/40 line-through font-body">R$8.279</span>
+            <span className="text-sm text-muted-foreground font-body">Preço normal</span>
+            <span className="text-foreground/40 line-through font-body text-lg">R$4.000</span>
           </div>
         </motion.div>
 
         <motion.div {...fadeUp} className="space-y-4 mb-12">
-          <p className="text-foreground/60 font-body text-sm">Mas hoje você não paga isso. Para tornar acessível:</p>
+          <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-5 py-2 mb-4">
+            <Flame className="h-4 w-4 text-primary" />
+            <span className="text-xs text-primary font-body font-semibold tracking-wide uppercase">Para os primeiros 50 alunos do Método Velora</span>
+          </div>
+          <p className="text-foreground/60 font-body text-sm">Você pode adquirir tudo isso hoje por apenas:</p>
           <p className="font-display text-5xl md:text-6xl velora-text-gradient font-light">R$497</p>
           <p className="text-xs text-muted-foreground font-body tracking-wider">Pagamento único · Sem mensalidade · Sem taxas</p>
+          <p className="text-xs text-foreground/40 font-body mt-2">Depois, o preço volta para <strong className="text-foreground/60">R$4.000</strong></p>
         </motion.div>
 
         <motion.div {...fadeUp} className="space-y-6">
@@ -337,11 +349,60 @@ export default function Aprender() {
         </motion.div>
       </section>
 
+      <SectionDivider />
+
+      {/* FAQ */}
+      <section className="px-6 max-w-3xl mx-auto pb-20 md:pb-28">
+        <motion.h2 {...fadeUp} className="font-display text-2xl md:text-4xl text-center mb-10 text-foreground">
+          Perguntas Frequentes
+        </motion.h2>
+        <motion.div {...fadeUp} className="max-w-xl mx-auto">
+          <Accordion type="single" collapsible className="space-y-2">
+            {faqItems.map((item, i) => (
+              <AccordionItem key={i} value={`faq-${i}`} className="velora-card border-none px-6">
+                <AccordionTrigger className="text-sm font-body text-foreground hover:no-underline py-5">
+                  {item.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-sm text-foreground/70 font-body leading-relaxed">
+                  {item.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </motion.div>
+      </section>
+
+      <SectionDivider />
+
+      {/* CTA FINAL */}
+      <section className="px-6 max-w-3xl mx-auto pb-20 md:pb-28 text-center">
+        <motion.h2 {...fadeUp} className="font-display text-2xl md:text-4xl mb-6 text-foreground">
+          Comece agora a criar como um diretor de arte
+        </motion.h2>
+        <motion.p {...fadeUp} className="text-foreground/60 font-body text-sm mb-10 max-w-lg mx-auto">
+          Domine a criação visual com IA e transforme qualquer ideia em campanhas que parecem de grandes marcas.
+        </motion.p>
+        <motion.div {...fadeUp}>
+          <CTA />
+        </motion.div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-border py-8 px-6 text-center">
         <p className="font-display text-sm velora-text-gradient tracking-[0.2em]">VELORA</p>
         <p className="text-xs text-muted-foreground font-body mt-2">© {new Date().getFullYear()} Velora. Todos os direitos reservados.</p>
       </footer>
+
+      {/* WhatsApp Floating Button */}
+      <a
+        href={WHATSAPP_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-[#25D366] flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+        aria-label="Falar no WhatsApp"
+      >
+        <MessageCircle className="h-7 w-7 text-white" />
+      </a>
     </div>
   );
 }
