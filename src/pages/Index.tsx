@@ -28,8 +28,22 @@ const Index = () => {
         source: "campanha",
       });
       if (error) throw error;
-      const whatsappMsg = encodeURIComponent(`Olá, meu nome é ${form.name.trim()} e quero criar minha campanha na Velora!`);
-      window.open(`https://wa.me/5598991722040?text=${whatsappMsg}`, "_blank");
+
+      // Trigger automated WhatsApp welcome message
+      const whatsappNumber = form.whatsapp.trim().replace(/\D/g, "");
+      const formattedNumber = whatsappNumber.startsWith("55") ? `+${whatsappNumber}` : `+55${whatsappNumber}`;
+      
+      try {
+        await supabase.functions.invoke("whatsapp-send", {
+          body: {
+            to: formattedNumber,
+            body: `Olá, ${form.name.trim().split(" ")[0]}! ✨\n\nSou a Velora — criamos fotos e vídeos editoriais profissionais para marcas usando inteligência artificial.\n\nConte-me sobre sua marca: qual o nome e o que vocês vendem?`,
+          },
+        });
+      } catch (whatsappErr) {
+        console.error("WhatsApp send failed:", whatsappErr);
+      }
+
       setSubmitted(true);
     } catch (err: any) {
       toast({ title: "Erro ao enviar", description: err.message, variant: "destructive" });
