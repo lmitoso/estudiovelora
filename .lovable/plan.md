@@ -1,81 +1,40 @@
 
 
-## Plano: Fase 1 — Agente de Vendas IA no WhatsApp via Twilio
+# Melhorar o Prompt do Sales-Agent
 
-### Contexto
-O Twilio já está conectado no workspace. Preciso vinculá-lo ao projeto e construir toda a infraestrutura do agente de vendas.
+## Objetivo
+Enriquecer o `SYSTEM_PROMPT` da edge function `sales-agent` com informações detalhadas sobre pacotes, portfólio, diferenciais e gatilhos de conversão da Velora.
 
-**Nota importante:** A memória do projeto diz "PROIBIDO usar APIs de automação no WhatsApp". Essa restrição será atualizada, pois você decidiu seguir com o agente IA automatizado.
+## O que muda
 
----
+**Arquivo**: `supabase/functions/sales-agent/index.ts` (apenas o `SYSTEM_PROMPT`, linhas 11-39)
 
-### Passo 1: Vincular Twilio ao projeto
-- Usar o conector para linkar a conexão Twilio existente ao projeto
-- Isso disponibiliza `TWILIO_API_KEY` e `LOVABLE_API_KEY` nas Edge Functions
+### Seções a adicionar/expandir no prompt:
 
-### Passo 2: Criar tabelas no banco
+1. **Pacotes estruturados** — Substituir preços avulsos por pacotes nomeados com ancoragem de valor:
+   - **Essencial** (3 fotos): R$ 97
+   - **Impacto** (5 fotos + 2 vídeos): R$ 247
+   - **Campanha Completa** (10 fotos + 5 vídeos + direção criativa): R$ 497
+   - Avulso: Foto R$ 29,90 | Vídeo R$ 49,90
 
-**`conversations`** — Uma conversa por lead
-- `id`, `lead_id` (ref leads), `whatsapp_number`, `status` (new/active/negotiating/closed_won/closed_lost), `stage` (greeting/discovery/proposal/follow_up/closing), `context_summary` (resumo da conversa para a IA), `last_message_at`, `next_follow_up_at`, `created_at`, `updated_at`
+2. **Portfólio e referências visuais** — Descrever o estilo editorial (Silent Luxury, lentes 70-85mm, referências Saint Laurent/Bottega Veneta) e direcionar ao Instagram @velora.direction
 
-**`conversation_messages`** — Histórico completo
-- `id`, `conversation_id`, `direction` (inbound/outbound), `content`, `message_type` (text/payment_link/follow_up), `twilio_sid`, `created_at`
+3. **Gatilhos de conversão** — Técnicas que o agente deve usar contextualmente:
+   - Ancoragem: "Um ensaio tradicional custa R$ 3.000-5.000. Na Velora, a partir de R$ 97"
+   - Escassez: "Trabalhamos com limite de projetos por semana para manter a qualidade"
+   - Prova social: "Marcas de moda e beleza já usam IA para campanhas editoriais"
+   - Reciprocidade: Oferecer 1 foto de teste gratuita para briefings completos
+   - Urgência suave: "Se fechar hoje, consigo priorizar a entrega em 24h"
 
-**`follow_up_schedule`** — Agenda de follow-ups
-- `id`, `conversation_id`, `scheduled_at`, `type` (value_reminder/urgency/check_in), `status` (pending/sent/cancelled), `message_content`, `created_at`
+4. **Objeções comuns** — Respostas prontas para:
+   - "É IA, não é real" → Explicar que grandes marcas já usam, qualidade editorial indistinguível
+   - "Está caro" → Comparar com fotógrafo tradicional, sugerir pacote menor
+   - "Preciso pensar" → Oferecer foto teste ou prazo especial
 
-RLS: Todas as tabelas bloqueadas para acesso público (somente Edge Functions com service role).
+5. **Fluxo de briefing** — Perguntas estruturadas que o agente deve fazer na fase de descoberta (nome da marca, produto, público, referências visuais, onde vai usar as fotos)
 
-### Passo 3: Criar Edge Functions
-
-**`whatsapp-webhook`** — Recebe mensagens do cliente
-- Twilio envia POST quando o cliente responde
-- Salva a mensagem no banco
-- Chama o `sales-agent` para gerar resposta
-- Envia a resposta via `whatsapp-send`
-
-**`whatsapp-send`** — Envia mensagens via Twilio Gateway
-- Usa `https://connector-gateway.lovable.dev/twilio/Messages.json`
-- Formato `application/x-www-form-urlencoded`
-- Salva mensagem enviada no banco
-
-**`sales-agent`** — Cérebro da IA
-- Usa Lovable AI (`google/gemini-2.5-flash`) com `LOVABLE_API_KEY`
-- Prompt de sistema treinado com:
-  - Identidade Velora (luxo silencioso, direção de arte com IA)
-  - Etapas de venda (ouvir → entender → orçar → fechar)
-  - Gatilhos de urgência e escassez quando apropriado
-  - Tom educado, consultivo, nunca desesperado
-  - Capacidade de enviar link de pagamento
-  - Lógica de follow-up (se cliente não responde em X horas)
-
-**`process-follow-ups`** — Cron job
-- Roda a cada hora via `pg_cron`
-- Busca follow-ups pendentes com `scheduled_at <= now()`
-- Envia mensagens de follow-up via `whatsapp-send`
-
-### Passo 4: Atualizar a Home
-- Após lead se cadastrar, criar automaticamente uma conversa no banco
-- Disparar primeira mensagem de boas-vindas via `whatsapp-send` (em vez de abrir `wa.me`)
-
-### Passo 5: Atualizar o Admin
-- Adicionar aba "Conversas" no painel admin
-- Visualizar conversas ativas, status, e histórico de mensagens
-- Alimentar o CRM automaticamente
-
-### Passo 6: Atualizar memória do projeto
-- Remover restrição de "PROIBIDO APIs de WhatsApp"
-- Documentar nova arquitetura do agente
-
----
-
-### Sobre a conta Trial do Twilio
-- Na trial, você precisa configurar o **WhatsApp Sandbox** (Messaging > Try it out > Send a WhatsApp message)
-- Só funciona com números verificados
-- Para produção: upgrade da conta Twilio (~$15/mês)
-
-### Custos recorrentes estimados
-- Twilio: ~R$ 0,25-0,50 por mensagem
-- Lovable AI: incluído no plano
-- Infraestrutura: incluída no Lovable Cloud
+## Detalhes técnicos
+- Apenas o conteúdo da constante `SYSTEM_PROMPT` será editado
+- Nenhuma mudança em lógica, banco de dados ou outros arquivos
+- A edge function será redeployada após a edição
 
