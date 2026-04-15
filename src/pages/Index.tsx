@@ -15,6 +15,7 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [redirectUrl, setRedirectUrl] = useState("");
   const [form, setForm] = useState({ name: "", email: "", whatsapp: "" });
+  const [consent, setConsent] = useState(false);
 
   const buildWhatsAppUrl = () => {
     const firstName = form.name.trim().split(" ")[0] || "Olá";
