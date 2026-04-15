@@ -65,6 +65,31 @@ serve(async (req) => {
       });
     }
 
+    if (action === "conversations") {
+      const { data, error } = await supabase
+        .from("conversations")
+        .select("*, leads(name, email), conversation_messages(count)")
+        .order("last_message_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return new Response(JSON.stringify({ data }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "conversation_messages" && orderId) {
+      const { data, error } = await supabase
+        .from("conversation_messages")
+        .select("*")
+        .eq("conversation_id", orderId)
+        .order("created_at", { ascending: true });
+      if (error) throw new Error(error.message);
+      return new Response(JSON.stringify({ data }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Invalid action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

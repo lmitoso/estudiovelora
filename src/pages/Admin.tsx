@@ -8,7 +8,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut, Download, Users } from "lucide-react";
+import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut, Download, Users, MessageSquare } from "lucide-react";
+import ConversationsTab from "@/components/admin/ConversationsTab";
 import { useNavigate } from "react-router-dom";
 
 type Order = {
@@ -331,9 +332,18 @@ export default function Admin() {
               <Users className="h-4 w-4 mr-1.5" />
               Leads
             </TabsTrigger>
+            <TabsTrigger value="conversas">
+              <MessageSquare className="h-4 w-4 mr-1.5" />
+              Conversas
+            </TabsTrigger>
             <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
             <TabsTrigger value="clientes">Clientes</TabsTrigger>
           </TabsList>
+
+          {/* CONVERSAS TAB */}
+          <TabsContent value="conversas">
+            <ConversationsTab password={password} />
+          </TabsContent>
 
           {/* LEADS TAB */}
           <TabsContent value="leads" className="space-y-4">

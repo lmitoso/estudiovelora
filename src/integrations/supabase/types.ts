@@ -14,6 +14,129 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversation_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          direction: string
+          id: string
+          message_type: string
+          twilio_sid: string | null
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          direction: string
+          id?: string
+          message_type?: string
+          twilio_sid?: string | null
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          message_type?: string
+          twilio_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          context_summary: string | null
+          created_at: string
+          id: string
+          last_message_at: string | null
+          lead_id: string | null
+          next_follow_up_at: string | null
+          stage: string
+          status: string
+          updated_at: string
+          whatsapp_number: string
+        }
+        Insert: {
+          context_summary?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          lead_id?: string | null
+          next_follow_up_at?: string | null
+          stage?: string
+          status?: string
+          updated_at?: string
+          whatsapp_number: string
+        }
+        Update: {
+          context_summary?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          lead_id?: string | null
+          next_follow_up_at?: string | null
+          stage?: string
+          status?: string
+          updated_at?: string
+          whatsapp_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follow_up_schedule: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          message_content: string | null
+          scheduled_at: string
+          status: string
+          type: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          message_content?: string | null
+          scheduled_at: string
+          status?: string
+          type?: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          message_content?: string | null
+          scheduled_at?: string
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_up_schedule_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       generations: {
         Row: {
           completed_at: string | null
