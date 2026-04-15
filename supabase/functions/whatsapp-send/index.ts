@@ -30,7 +30,7 @@ serve(async (req) => {
     }
 
     // Send via Twilio WhatsApp sandbox
-    const fromNumber = Deno.env.get("TWILIO_WHATSAPP_FROM") || "whatsapp:+14155238886";
+    const fromNumber = Deno.env.get("TWILIO_WHATSAPP_FROM") || "whatsapp:+17403135891";
     const toWhatsapp = to.startsWith("whatsapp:") ? to : `whatsapp:${to}`;
 
     const response = await fetch(`${GATEWAY_URL}/Messages.json`, {
