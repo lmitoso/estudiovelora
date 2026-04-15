@@ -1,22 +1,26 @@
 
 
-## Plano: Redirecionar para WhatsApp após cadastro
+## Corrigir credenciais do Twilio
 
-Após o lead preencher o formulário na home (`/`), em vez de apenas mostrar a mensagem de sucesso, o sistema abrirá automaticamente uma conversa no WhatsApp com uma mensagem personalizada usando o nome do lead.
+### O problema
+O erro `twilio/phone-numbers/active-numbers/list is missing` indica que a chave API usada não tem permissão suficiente. Isso acontece quando se usa uma API Key secundária com escopo limitado.
 
-### Mudança em `src/pages/Index.tsx`
+### O que você precisa fazer no Twilio Console
 
-Após o `insert` no banco ser bem-sucedido, abrir em nova aba:
+1. Acesse [console.twilio.com](https://console.twilio.com/)
+2. Na página inicial, copie o **Account SID** e o **Auth Token** (clique para revelar). Esses são as credenciais principais da conta, que têm todas as permissões.
+3. Se você criou uma API Key separada (em Account > API Keys), ela pode ter permissões limitadas. Use o **Auth Token** da conta principal.
 
-```
-https://wa.me/5598991722040?text=Olá, meu nome é {nome} e quero criar minha campanha na Velora!
-```
+### Depois de ter as credenciais corretas
 
-O fluxo:
-1. Lead preenche nome, e-mail e WhatsApp
-2. Dados são salvos no banco (como já funciona)
-3. Tela de sucesso aparece normalmente
-4. Ao mesmo tempo, abre o WhatsApp Web/app com a mensagem pré-preenchida
+1. Vou solicitar a conexão do Twilio novamente
+2. Ao preencher, use:
+   - **Account SID**: começa com `AC...`
+   - **Auth Token**: o token principal da conta (não uma API Key secundária)
+3. Com a conexão feita, seguimos para criar as tabelas e edge functions
 
-Isso é gratuito, sem API externa, e funciona tanto no celular (abre o app) quanto no desktop (abre WhatsApp Web).
+### Segurança pós-conexão
+Após conectar, recomendo ativar no Twilio Console:
+- **SMS Pumping Protection** (proteção contra fraude)
+- **SMS Geo Permissions** (liberar apenas Brasil)
 
