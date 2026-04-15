@@ -15,6 +15,7 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [redirectUrl, setRedirectUrl] = useState("");
   const [form, setForm] = useState({ name: "", email: "", whatsapp: "" });
+  const [consent, setConsent] = useState(false);
 
   const buildWhatsAppUrl = () => {
     const firstName = form.name.trim().split(" ")[0] || "Olá";
@@ -168,11 +169,23 @@ const Index = () => {
                 required
                 maxLength={20}
               />
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-1 accent-primary"
+                  required
+                />
+                <span className="text-xs text-muted-foreground font-body leading-relaxed">
+                  Autorizo a Velora a entrar em contato pelo WhatsApp informado.
+                </span>
+              </label>
               <motion.button
                 type="submit"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
-                disabled={loading}
+                disabled={loading || !consent}
                 className="velora-btn-primary w-full velora-glow py-4 disabled:opacity-50"
               >
                 {loading ? "Enviando..." : "Quero minha campanha"}
