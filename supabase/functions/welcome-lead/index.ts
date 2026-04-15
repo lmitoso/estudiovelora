@@ -59,38 +59,11 @@ serve(async (req) => {
       conversationId = newConv.id;
     }
 
-    // Generate personalized welcome via sales-agent
     const firstName = name.split(" ")[0];
-    const introMessage = `Olá, meu nome é ${firstName}. Vi o site da Velora e tenho interesse em criar fotos e vídeos para minha marca.`;
 
-    const agentResponse = await fetch(
-      `${Deno.env.get("SUPABASE_URL")}/functions/v1/sales-agent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
-        },
-        body: JSON.stringify({
-          conversationId,
-          inboundMessage: introMessage,
-        }),
-      }
-    );
+    // Send welcome via WhatsApp using approved template
+    const WELCOME_TEMPLATE_SID = "HX909aba526ab38743bc5b43b321599c90";
 
-    const agentData = await agentResponse.json();
-    const welcomeMessage = agentData.reply || 
-      `Olá, ${firstName}! ✨\n\nSou a Velora — criamos fotos e vídeos editoriais profissionais para marcas usando inteligência artificial.\n\nConte-me sobre sua marca: qual o nome e o que vocês vendem?`;
-
-    // Save the simulated inbound message
-    await supabase.from("conversation_messages").insert({
-      conversation_id: conversationId,
-      direction: "inbound",
-      content: introMessage,
-      message_type: "text",
-    });
-
-    // Send welcome via WhatsApp
     const sendResponse = await fetch(
       `${Deno.env.get("SUPABASE_URL")}/functions/v1/whatsapp-send`,
       {
@@ -101,9 +74,10 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           to: phoneNumber,
-          body: welcomeMessage,
+          contentSid: WELCOME_TEMPLATE_SID,
+          contentVariables: JSON.stringify({ "1": firstName }),
           conversationId,
-          messageType: "text",
+          messageType: "template",
         }),
       }
     );
