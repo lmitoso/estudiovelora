@@ -28,6 +28,8 @@ const Index = () => {
         source: "campanha",
       });
       if (error) throw error;
+      const whatsappMsg = encodeURIComponent(`Olá, meu nome é ${form.name.trim()} e quero criar minha campanha na Velora!`);
+      window.open(`https://wa.me/5598991722040?text=${whatsappMsg}`, "_blank");
       setSubmitted(true);
     } catch (err: any) {
       toast({ title: "Erro ao enviar", description: err.message, variant: "destructive" });
