@@ -1,40 +1,63 @@
 
 
-# Melhorar o Prompt do Sales-Agent
+# Correções Necessárias
 
-## Objetivo
-Enriquecer o `SYSTEM_PROMPT` da edge function `sales-agent` com informações detalhadas sobre pacotes, portfólio, diferenciais e gatilhos de conversão da Velora.
+## Problema 1: Mensagens não chegam no WhatsApp
+O sistema enviou as mensagens com sucesso (Twilio retornou SID), mas como estamos no **Twilio Sandbox**, o destinatário precisa ter feito opt-in antes (enviar "join ..." para o número do sandbox). Sem isso, a mensagem é aceita pela API mas não entregue.
 
-## O que muda
+**Solução**: Não é um bug de código. Opções:
+- Para testes: a pessoa precisa enviar a mensagem de adesão ao sandbox antes
+- Para produção: migrar para um número Twilio com WhatsApp Business aprovado (não requer opt-in prévio)
 
-**Arquivo**: `supabase/functions/sales-agent/index.ts` (apenas o `SYSTEM_PROMPT`, linhas 11-39)
+## Problema 2: Lead não vincula à conversa automaticamente
+Os leads do Gilbert e Juliana têm `lead_id: null` na conversa. O trigger `link_conversation_to_lead` compara o `whatsapp_number` da conversa (normalizado com `+55`, ex: `+5537991826936`) com o campo `whatsapp` do lead (salvo sem prefixo, ex: `37991826936`).
 
-### Seções a adicionar/expandir no prompt:
+O trigger atual faz:
+```
+stripped_number = remove o "+" → "5537991826936"
+WHERE whatsapp = "+5537991826936" OR whatsapp = "5537991826936"
+```
+Mas o lead tem `whatsapp = "37991826936"` (sem o 55). A comparação falha.
 
-1. **Pacotes estruturados** — Substituir preços avulsos por pacotes nomeados com ancoragem de valor:
-   - **Essencial** (3 fotos): R$ 97
-   - **Impacto** (5 fotos + 2 vídeos): R$ 247
-   - **Campanha Completa** (10 fotos + 5 vídeos + direção criativa): R$ 497
-   - Avulso: Foto R$ 29,90 | Vídeo R$ 49,90
+**Solução**: Atualizar o trigger `link_conversation_to_lead` para normalizar o número do lead da mesma forma — extrair apenas dígitos e comparar com/sem o prefixo 55.
 
-2. **Portfólio e referências visuais** — Descrever o estilo editorial (Silent Luxury, lentes 70-85mm, referências Saint Laurent/Bottega Veneta) e direcionar ao Instagram @velora.direction
+### Arquivo: Migration SQL
+Recriar a função `link_conversation_to_lead` com normalização robusta:
+- Extrair apenas dígitos de ambos os lados
+- Comparar sem prefixo de país (últimos 10-11 dígitos)
+- Isso cobre todos os formatos: `37991826936`, `+5537991826936`, `5537991826936`
 
-3. **Gatilhos de conversão** — Técnicas que o agente deve usar contextualmente:
-   - Ancoragem: "Um ensaio tradicional custa R$ 3.000-5.000. Na Velora, a partir de R$ 97"
-   - Escassez: "Trabalhamos com limite de projetos por semana para manter a qualidade"
-   - Prova social: "Marcas de moda e beleza já usam IA para campanhas editoriais"
-   - Reciprocidade: Oferecer 1 foto de teste gratuita para briefings completos
-   - Urgência suave: "Se fechar hoje, consigo priorizar a entrega em 24h"
+### Detalhes técnicos
+```sql
+CREATE OR REPLACE FUNCTION public.link_conversation_to_lead()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  found_lead_id uuid;
+  conv_digits text;
+BEGIN
+  -- Extract only digits from conversation number
+  conv_digits := regexp_replace(NEW.whatsapp_number, '[^0-9]', '', 'g');
+  -- Remove country code 55 if present
+  IF left(conv_digits, 2) = '55' AND length(conv_digits) > 11 THEN
+    conv_digits := substring(conv_digits from 3);
+  END IF;
 
-4. **Objeções comuns** — Respostas prontas para:
-   - "É IA, não é real" → Explicar que grandes marcas já usam, qualidade editorial indistinguível
-   - "Está caro" → Comparar com fotógrafo tradicional, sugerir pacote menor
-   - "Preciso pensar" → Oferecer foto teste ou prazo especial
+  SELECT id INTO found_lead_id FROM leads
+  WHERE regexp_replace(whatsapp, '[^0-9]', '', 'g') = conv_digits
+     OR regexp_replace(
+          regexp_replace(whatsapp, '[^0-9]', '', 'g'),
+          '^55', ''
+        ) = conv_digits
+  LIMIT 1;
 
-5. **Fluxo de briefing** — Perguntas estruturadas que o agente deve fazer na fase de descoberta (nome da marca, produto, público, referências visuais, onde vai usar as fotos)
+  IF found_lead_id IS NOT NULL THEN
+    NEW.lead_id := found_lead_id;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+```
 
-## Detalhes técnicos
-- Apenas o conteúdo da constante `SYSTEM_PROMPT` será editado
-- Nenhuma mudança em lógica, banco de dados ou outros arquivos
-- A edge function será redeployada após a edição
+Também corrigir retroativamente os 2 leads existentes que não foram vinculados.
 
