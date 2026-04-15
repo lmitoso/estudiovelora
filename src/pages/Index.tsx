@@ -29,19 +29,16 @@ const Index = () => {
       });
       if (error) throw error;
 
-      // Trigger automated WhatsApp welcome message
-      const whatsappNumber = form.whatsapp.trim().replace(/\D/g, "");
-      const formattedNumber = whatsappNumber.startsWith("55") ? `+${whatsappNumber}` : `+55${whatsappNumber}`;
-      
+      // Trigger automated WhatsApp welcome (creates conversation + AI-generated message)
       try {
-        await supabase.functions.invoke("whatsapp-send", {
+        await supabase.functions.invoke("welcome-lead", {
           body: {
-            to: formattedNumber,
-            body: `Olá, ${form.name.trim().split(" ")[0]}! ✨\n\nSou a Velora — criamos fotos e vídeos editoriais profissionais para marcas usando inteligência artificial.\n\nConte-me sobre sua marca: qual o nome e o que vocês vendem?`,
+            name: form.name.trim(),
+            whatsapp: form.whatsapp.trim(),
           },
         });
-      } catch (whatsappErr) {
-        console.error("WhatsApp send failed:", whatsappErr);
+      } catch (welcomeErr) {
+        console.error("Welcome lead failed:", welcomeErr);
       }
 
       setSubmitted(true);
