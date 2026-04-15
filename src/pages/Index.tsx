@@ -4,14 +4,23 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import heroImg from "@/assets/hero-velora.jpg";
-import { CheckCircle2, ArrowRight, BookOpen } from "lucide-react";
+import { CheckCircle2, ArrowRight, BookOpen, MessageCircle } from "lucide-react";
+
+const VELORA_WHATSAPP_NUMBER = "5598991722040";
 
 const Index = () => {
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [redirectUrl, setRedirectUrl] = useState("");
   const [form, setForm] = useState({ name: "", email: "", whatsapp: "" });
+
+  const buildWhatsAppUrl = () => {
+    const firstName = form.name.trim().split(" ")[0] || "Olá";
+    const message = `Olá! Sou ${firstName} e acabei de preencher o cadastro no site da Velora. Quero começar minha campanha.`;
+    return `https://wa.me/${VELORA_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,6 +28,7 @@ const Index = () => {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
       return;
     }
+
     setLoading(true);
     try {
       const { error } = await supabase.from("leads").insert({
@@ -29,19 +39,10 @@ const Index = () => {
       });
       if (error) throw error;
 
-      // Trigger automated WhatsApp welcome (creates conversation + AI-generated message)
-      try {
-        await supabase.functions.invoke("welcome-lead", {
-          body: {
-            name: form.name.trim(),
-            whatsapp: form.whatsapp.trim(),
-          },
-        });
-      } catch (welcomeErr) {
-        console.error("Welcome lead failed:", welcomeErr);
-      }
-
+      const whatsappUrl = buildWhatsAppUrl();
+      setRedirectUrl(whatsappUrl);
       setSubmitted(true);
+      window.location.assign(whatsappUrl);
     } catch (err: any) {
       toast({ title: "Erro ao enviar", description: err.message, variant: "destructive" });
     } finally {
@@ -55,9 +56,12 @@ const Index = () => {
         <img src={heroImg} alt="Studio Velora editorial" className="w-full h-full object-cover opacity-30" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-background/95" />
         <div className="absolute inset-x-0 top-0 h-32 bg-background" />
-        <div className="absolute inset-0" style={{
-          background: "radial-gradient(ellipse at 50% 30%, hsl(var(--gold) / 0.06) 0%, transparent 60%)"
-        }} />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "radial-gradient(ellipse at 50% 30%, hsl(var(--gold) / 0.06) 0%, transparent 60%)",
+          }}
+        />
       </div>
 
       <motion.div
@@ -112,11 +116,17 @@ const Index = () => {
               className="velora-card p-8 space-y-4"
             >
               <CheckCircle2 className="h-12 w-12 text-primary mx-auto" />
-              <h2 className="font-display text-xl text-foreground">Recebemos seus dados!</h2>
+              <h2 className="font-display text-xl text-foreground">Cadastro enviado!</h2>
               <p className="text-sm text-muted-foreground font-body leading-relaxed">
-                Um de nossos diretores de arte entrará em contato pelo WhatsApp em breve.
-                <br />Aguarde — vamos criar algo incrível juntos.
+                Estamos abrindo o WhatsApp para você continuar a conversa com a Velora agora.
               </p>
+              <a
+                href={redirectUrl}
+                className="velora-btn-primary velora-glow w-full py-4 flex items-center justify-center gap-3"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Abrir WhatsApp agora
+              </a>
             </motion.div>
           ) : showForm ? (
             <motion.form
