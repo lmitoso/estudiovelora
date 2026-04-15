@@ -1,53 +1,22 @@
 
 
-## Plano: Aprimorar Landing Page /aprender
+## Plano: Redirecionar para WhatsApp após cadastro
 
-### Mudanças no `src/pages/Aprender.tsx`
+Após o lead preencher o formulário na home (`/`), em vez de apenas mostrar a mensagem de sucesso, o sistema abrirá automaticamente uma conversa no WhatsApp com uma mensagem personalizada usando o nome do lead.
 
-#### 1. Pricing — Ancoragem de preço e urgência
-- Preço "normal" de **R$4.000** riscado
-- Preço promocional **R$497** para os primeiros 50 alunos
-- Badge: "Para os primeiros 50 alunos do Método Velora"
-- Texto: "Depois, o preço volta para R$4.000"
+### Mudança em `src/pages/Index.tsx`
 
-#### 2. Selo de Garantia de 7 dias
-- Seção com ícone de escudo
-- "Garantia incondicional de 7 dias. Acesse o curso, e se não for o que esperava, peça reembolso completo. A compra é feita pela Kiwify, que garante todos os direitos do consumidor."
+Após o `insert` no banco ser bem-sucedido, abrir em nova aba:
 
-#### 3. FAQ — Perguntas Frequentes
-- Accordion com objeções de compra:
-  - "Preciso ter experiência com IA?"
-  - "Funciona para qualquer nicho?"
-  - "Quanto tempo tenho de acesso?"
-  - "E se eu não gostar?"
-  - "Preciso de equipamentos caros?"
-  - "Como recebo o acesso?"
-
-#### 4. Botão WhatsApp flutuante
-- Fixo no canto inferior direito, cor verde
-- Link: `https://wa.me/5598991722040?text=Olá, quero saber mais sobre o Método Velora`
-
-#### 5. Sem galeria visual
-- Sem fotos de exemplo e sem vídeos — página focada em copy e conversão
-
-#### 6. Estrutura final
-```text
-Hero
-A Nova Era
-O Problema
-O Método
-Curso (conteúdo)
-Oportunidade
-Bônus
-Garantia 7 dias
-Preço (R$4.000 → R$497 para 50 primeiros)
-FAQ
-CTA Final
-Botão WhatsApp (flutuante)
+```
+https://wa.me/5598991722040?text=Olá, meu nome é {nome} e quero criar minha campanha na Velora!
 ```
 
-### Detalhes Técnicos
-- FAQ usa componente Accordion existente
-- WhatsApp: `5598991722040`
-- Arquivo editado: `src/pages/Aprender.tsx`
+O fluxo:
+1. Lead preenche nome, e-mail e WhatsApp
+2. Dados são salvos no banco (como já funciona)
+3. Tela de sucesso aparece normalmente
+4. Ao mesmo tempo, abre o WhatsApp Web/app com a mensagem pré-preenchida
+
+Isso é gratuito, sem API externa, e funciona tanto no celular (abre o app) quanto no desktop (abre WhatsApp Web).
 
