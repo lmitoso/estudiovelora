@@ -4,11 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut, Download, Users, MessageSquare } from "lucide-react";
+import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut, Download, Users, MessageSquare, Phone, Mail, Calendar, ShoppingBag, DollarSign } from "lucide-react";
 import ConversationsTab from "@/components/admin/ConversationsTab";
 import { useNavigate } from "react-router-dom";
 
@@ -257,7 +254,7 @@ export default function Admin() {
 
   if (!authenticated) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
         <div className="bg-card border border-border rounded-lg p-8 w-full max-w-sm space-y-6">
           <div className="text-center space-y-2">
             <Lock className="h-10 w-10 mx-auto text-primary" />
@@ -285,41 +282,40 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <ArrowLeft className="h-5 w-5" />
+      <header className="border-b border-border px-4 py-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={() => navigate("/")}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>
+          <h1 className="text-lg sm:text-2xl font-semibold truncate" style={{ fontFamily: "var(--font-display)" }}>
             Painel CRM
           </h1>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => { fetchOrders(); fetchLeads(); }} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-            Atualizar
+        <div className="flex items-center gap-1.5">
+          <Button variant="outline" size="sm" className="h-8 px-2 sm:px-3" onClick={() => { fetchOrders(); fetchLeads(); }} disabled={loading}>
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+            <span className="hidden sm:inline ml-1.5">Atualizar</span>
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => { sessionStorage.removeItem("admin_pwd"); setAuthenticated(false); setPassword(""); }}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Sair
+          <Button variant="ghost" size="sm" className="h-8 px-2 sm:px-3" onClick={() => { sessionStorage.removeItem("admin_pwd"); setAuthenticated(false); setPassword(""); }}>
+            <LogOut className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline ml-1.5">Sair</span>
           </Button>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        {/* Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-2 sm:gap-4">
           {[
             { label: "Leads", value: metrics.leads },
             { label: "Pedidos", value: metrics.total },
             { label: "Pagos", value: metrics.paid },
             { label: "Falhados", value: metrics.failed },
-            { label: "Receita", value: `R$ ${metrics.revenue.toFixed(2)}` },
+            { label: "Receita", value: `R$ ${metrics.revenue.toFixed(0)}` },
             { label: "Clientes", value: metrics.customers },
           ].map((m) => (
-            <div key={m.label} className="bg-card border border-border rounded-lg p-4">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">{m.label}</p>
-              <p className="text-2xl font-bold mt-1" style={{ fontFamily: "var(--font-display)" }}>
+            <div key={m.label} className="bg-card border border-border rounded-lg p-2.5 sm:p-4">
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">{m.label}</p>
+              <p className="text-lg sm:text-2xl font-bold mt-0.5 sm:mt-1" style={{ fontFamily: "var(--font-display)" }}>
                 {m.value}
               </p>
             </div>
@@ -327,25 +323,23 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="leads">
-          <TabsList className="bg-card border border-border">
-            <TabsTrigger value="leads">
-              <Users className="h-4 w-4 mr-1.5" />
+          <TabsList className="bg-card border border-border w-full justify-start overflow-x-auto">
+            <TabsTrigger value="leads" className="text-xs sm:text-sm">
+              <Users className="h-3.5 w-3.5 mr-1" />
               Leads
             </TabsTrigger>
-            <TabsTrigger value="conversas">
-              <MessageSquare className="h-4 w-4 mr-1.5" />
+            <TabsTrigger value="conversas" className="text-xs sm:text-sm">
+              <MessageSquare className="h-3.5 w-3.5 mr-1" />
               Conversas
             </TabsTrigger>
-            <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
-            <TabsTrigger value="clientes">Clientes</TabsTrigger>
+            <TabsTrigger value="pedidos" className="text-xs sm:text-sm">Pedidos</TabsTrigger>
+            <TabsTrigger value="clientes" className="text-xs sm:text-sm">Clientes</TabsTrigger>
           </TabsList>
 
-          {/* CONVERSAS TAB */}
           <TabsContent value="conversas">
             <ConversationsTab password={password} />
           </TabsContent>
 
-          {/* LEADS TAB */}
           <TabsContent value="leads" className="space-y-4">
             <div className="flex justify-end">
               <Button variant="outline" size="sm" onClick={() => exportCSV("leads")}>
@@ -353,158 +347,267 @@ export default function Admin() {
                 Exportar CSV
               </Button>
             </div>
-            <div className="border border-border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-card">
-                    <TableHead>Data</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>E-mail</TableHead>
-                    <TableHead>WhatsApp</TableHead>
-                    <TableHead>Fonte</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {leadsLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">Carregando...</TableCell>
-                    </TableRow>
-                  ) : leads.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">Nenhum lead capturado ainda.</TableCell>
-                    </TableRow>
-                  ) : (
-                    leads.map((l) => (
-                      <TableRow key={l.id}>
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+
+            {leadsLoading ? (
+              <div className="text-center py-12 text-muted-foreground">Carregando...</div>
+            ) : leads.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">Nenhum lead capturado ainda.</div>
+            ) : (
+              <>
+                <div className="grid gap-2.5 md:hidden">
+                  {leads.map((l) => (
+                    <div key={l.id} className="bg-card border border-border rounded-lg p-3 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">{l.name}</p>
+                          <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                            <Mail className="h-3 w-3 shrink-0" />
+                            {l.email}
+                          </p>
+                        </div>
+                        <Badge className="text-[10px] shrink-0 bg-primary/20 text-primary border-primary/30">
+                          {l.source || "campanha"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
                           {new Date(l.created_at).toLocaleDateString("pt-BR")}
-                        </TableCell>
-                        <TableCell className="font-medium text-sm">{l.name}</TableCell>
-                        <TableCell className="text-sm">{l.email}</TableCell>
-                        <TableCell className="text-sm">{l.whatsapp || "—"}</TableCell>
-                        <TableCell>
-                          <Badge className="text-[10px] bg-primary/20 text-primary border-primary/30">{l.source || "campanha"}</Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                        </span>
+                        {l.whatsapp && (
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {l.whatsapp}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="hidden md:block border border-border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-card border-b border-border">
+                        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Data</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Nome</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">E-mail</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">WhatsApp</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Fonte</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {leads.map((l) => (
+                        <tr key={l.id} className="border-b border-border last:border-0">
+                          <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                            {new Date(l.created_at).toLocaleDateString("pt-BR")}
+                          </td>
+                          <td className="px-4 py-3 font-medium text-sm">{l.name}</td>
+                          <td className="px-4 py-3 text-sm">{l.email}</td>
+                          <td className="px-4 py-3 text-sm">{l.whatsapp || "—"}</td>
+                          <td className="px-4 py-3">
+                            <Badge className="text-[10px] bg-primary/20 text-primary border-primary/30">{l.source || "campanha"}</Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </TabsContent>
 
-          {/* PEDIDOS TAB */}
           <TabsContent value="pedidos" className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-              <div className="relative flex-1">
+              <div className="relative flex-1 w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar por nome, e-mail, marca ou WhatsApp..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+                <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
               </div>
               <Button variant="outline" size="sm" onClick={() => exportCSV("pedidos")} className="shrink-0">
                 <Download className="h-4 w-4 mr-2" />
                 Exportar CSV
               </Button>
             </div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-1.5 sm:gap-2 flex-wrap">
               {STATUS_FILTERS.map((s) => (
-                <Button key={s} variant={statusFilter === s ? "default" : "outline"} size="sm" onClick={() => setStatusFilter(s)} className="capitalize text-xs">
+                <Button key={s} variant={statusFilter === s ? "default" : "outline"} size="sm" onClick={() => setStatusFilter(s)} className="capitalize text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3">
                   {s === "todos" ? "Todos" : s.replace("_", " ")}
                 </Button>
               ))}
             </div>
-            <div className="border border-border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-card">
-                    <TableHead className="w-8"></TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead className="hidden md:table-cell">WhatsApp</TableHead>
-                    <TableHead className="hidden md:table-cell">Marca</TableHead>
-                    <TableHead className="hidden lg:table-cell">Modelo</TableHead>
-                    <TableHead className="hidden lg:table-cell">Qtd</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-20"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableRow><TableCell colSpan={10} className="text-center py-12 text-muted-foreground">Carregando...</TableCell></TableRow>
-                  ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={10} className="text-center py-12 text-muted-foreground">Nenhum pedido encontrado.</TableCell></TableRow>
-                  ) : (
-                    filtered.map((order) => (
-                      <>
-                        <TableRow key={order.id} className="cursor-pointer hover:bg-muted/30" onClick={() => fetchGenerations(order.id)}>
-                          <TableCell>
-                            {expandedOrder === order.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{new Date(order.created_at).toLocaleDateString("pt-BR")}</TableCell>
-                          <TableCell>
-                            <div>
+
+            {loading ? (
+              <div className="text-center py-12 text-muted-foreground">Carregando...</div>
+            ) : filtered.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">Nenhum pedido encontrado.</div>
+            ) : (
+              <>
+                <div className="grid gap-2.5 md:hidden">
+                  {filtered.map((order) => (
+                    <div key={order.id} className="bg-card border border-border rounded-lg overflow-hidden">
+                      <div
+                        className="p-3 cursor-pointer active:bg-muted/20"
+                        onClick={() => fetchGenerations(order.id)}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{order.customer_name || "—"}</p>
+                            <p className="text-xs text-muted-foreground truncate">{order.email}</p>
+                          </div>
+                          <Badge className={`text-[10px] shrink-0 ${statusColors[order.status] || ""}`}>
+                            {order.status.replace("_", " ")}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(order.created_at).toLocaleDateString("pt-BR")}
+                            </span>
+                            <span className="text-foreground font-medium">
+                              R$ {Number(order.total_price).toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>{order.brand_name}</span>
+                            {expandedOrder === order.id ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
+                          <span className="capitalize">{order.model_type}</span>
+                          <span>{order.photos_qty}F {order.videos_qty}V</span>
+                          {order.whatsapp && (
+                            <span className="flex items-center gap-0.5">
+                              <Phone className="h-2.5 w-2.5" />
+                              {order.whatsapp}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {expandedOrder === order.id && (
+                        <div className="border-t border-border bg-card/50 p-3 space-y-3">
+                          <div className="space-y-1.5 text-xs">
+                            <p><span className="text-muted-foreground">Marca:</span> {order.brand_description || "—"}</p>
+                            <p><span className="text-muted-foreground">Campanha:</span> {order.campaign_goal || "—"}</p>
+                            <p><span className="text-muted-foreground">Peça:</span> {order.piece_description || "—"}</p>
+                          </div>
+                          {order.status === "generation_failed" && (
+                            <Button variant="outline" size="sm" className="text-xs w-full" disabled={retrying === order.id} onClick={() => handleRetry(order.id)}>
+                              <RefreshCw className={`h-3 w-3 mr-1 ${retrying === order.id ? "animate-spin" : ""}`} />
+                              Retry
+                            </Button>
+                          )}
+                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Gerações</p>
+                          {generations[order.id]?.length ? (
+                            <div className="space-y-2">
+                              {generations[order.id].map((g) => (
+                                <div key={g.id} className="flex items-center gap-2 bg-background border border-border rounded-md p-2.5 text-xs flex-wrap">
+                                  <Badge className={`text-[10px] ${statusColors[g.status] || ""}`}>{g.status}</Badge>
+                                  <span className="capitalize text-muted-foreground">{g.type}</span>
+                                  {g.output_url && (
+                                    <a href={g.output_url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-[10px]">Ver</a>
+                                  )}
+                                  {g.error_message && (
+                                    <span className="text-destructive text-[10px] break-all">{g.error_message}</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">Nenhuma geração encontrada.</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="hidden md:block border border-border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-card border-b border-border">
+                        <th className="w-8 px-3 py-3"></th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-3 py-3">Data</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-3 py-3">Cliente</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-3 py-3">WhatsApp</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-3 py-3">Marca</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-3 py-3 hidden lg:table-cell">Modelo</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-3 py-3 hidden lg:table-cell">Qtd</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-3 py-3">Valor</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-3 py-3">Status</th>
+                        <th className="w-20 px-3 py-3"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((order) => (
+                        <>
+                          <tr key={order.id} className="border-b border-border last:border-0 cursor-pointer hover:bg-muted/30" onClick={() => fetchGenerations(order.id)}>
+                            <td className="px-3 py-3">
+                              {expandedOrder === order.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                            </td>
+                            <td className="px-3 py-3 text-xs text-muted-foreground whitespace-nowrap">{new Date(order.created_at).toLocaleDateString("pt-BR")}</td>
+                            <td className="px-3 py-3">
                               <p className="font-medium text-sm">{order.customer_name || "—"}</p>
                               <p className="text-xs text-muted-foreground">{order.email}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell text-sm">{order.whatsapp || "—"}</TableCell>
-                          <TableCell className="hidden md:table-cell text-sm">{order.brand_name}</TableCell>
-                          <TableCell className="hidden lg:table-cell text-sm capitalize">{order.model_type}</TableCell>
-                          <TableCell className="hidden lg:table-cell text-sm">{order.photos_qty}F {order.videos_qty}V</TableCell>
-                          <TableCell className="text-sm font-medium">R$ {Number(order.total_price).toFixed(2)}</TableCell>
-                          <TableCell>
-                            <Badge className={`text-[10px] ${statusColors[order.status] || ""}`}>{order.status.replace("_", " ")}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            {order.status === "generation_failed" && (
-                              <Button variant="outline" size="sm" className="text-xs" disabled={retrying === order.id} onClick={(e) => { e.stopPropagation(); handleRetry(order.id); }}>
-                                <RefreshCw className={`h-3 w-3 mr-1 ${retrying === order.id ? "animate-spin" : ""}`} />
-                                Retry
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                        {expandedOrder === order.id && (
-                          <TableRow key={`${order.id}-detail`}>
-                            <TableCell colSpan={10} className="bg-card/50 p-4">
-                              <div className="grid md:grid-cols-2 gap-4 mb-4">
-                                <div className="space-y-1 text-sm">
-                                  <p><span className="text-muted-foreground">Descrição da marca:</span> {order.brand_description || "—"}</p>
-                                  <p><span className="text-muted-foreground">Objetivo da campanha:</span> {order.campaign_goal || "—"}</p>
-                                  <p><span className="text-muted-foreground">Descrição da peça:</span> {order.piece_description || "—"}</p>
-                                </div>
-                              </div>
-                              <p className="text-xs text-muted-foreground mb-2 font-semibold uppercase tracking-wider">Gerações</p>
-                              {generations[order.id]?.length ? (
-                                <div className="space-y-2">
-                                  {generations[order.id].map((g) => (
-                                    <div key={g.id} className="flex items-center gap-3 bg-background border border-border rounded-md p-3 text-sm">
-                                      <Badge className={`text-[10px] ${statusColors[g.status] || ""}`}>{g.status}</Badge>
-                                      <span className="capitalize text-muted-foreground">{g.type}</span>
-                                      {g.output_url && (
-                                        <a href={g.output_url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-xs">Ver resultado</a>
-                                      )}
-                                      {g.error_message && (
-                                        <span className="text-destructive text-xs truncate max-w-xs">{g.error_message}</span>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <p className="text-xs text-muted-foreground">Nenhuma geração encontrada.</p>
+                            </td>
+                            <td className="px-3 py-3 text-sm">{order.whatsapp || "—"}</td>
+                            <td className="px-3 py-3 text-sm">{order.brand_name}</td>
+                            <td className="px-3 py-3 text-sm capitalize hidden lg:table-cell">{order.model_type}</td>
+                            <td className="px-3 py-3 text-sm hidden lg:table-cell">{order.photos_qty}F {order.videos_qty}V</td>
+                            <td className="px-3 py-3 text-sm font-medium">R$ {Number(order.total_price).toFixed(2)}</td>
+                            <td className="px-3 py-3">
+                              <Badge className={`text-[10px] ${statusColors[order.status] || ""}`}>{order.status.replace("_", " ")}</Badge>
+                            </td>
+                            <td className="px-3 py-3">
+                              {order.status === "generation_failed" && (
+                                <Button variant="outline" size="sm" className="text-xs" disabled={retrying === order.id} onClick={(e) => { e.stopPropagation(); handleRetry(order.id); }}>
+                                  <RefreshCw className={`h-3 w-3 mr-1 ${retrying === order.id ? "animate-spin" : ""}`} />
+                                  Retry
+                                </Button>
                               )}
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                            </td>
+                          </tr>
+                          {expandedOrder === order.id && (
+                            <tr key={`${order.id}-detail`}>
+                              <td colSpan={10} className="bg-card/50 p-4">
+                                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                                  <div className="space-y-1 text-sm">
+                                    <p><span className="text-muted-foreground">Descrição da marca:</span> {order.brand_description || "—"}</p>
+                                    <p><span className="text-muted-foreground">Objetivo da campanha:</span> {order.campaign_goal || "—"}</p>
+                                    <p><span className="text-muted-foreground">Descrição da peça:</span> {order.piece_description || "—"}</p>
+                                  </div>
+                                </div>
+                                <p className="text-xs text-muted-foreground mb-2 font-semibold uppercase tracking-wider">Gerações</p>
+                                {generations[order.id]?.length ? (
+                                  <div className="space-y-2">
+                                    {generations[order.id].map((g) => (
+                                      <div key={g.id} className="flex items-center gap-3 bg-background border border-border rounded-md p-3 text-sm">
+                                        <Badge className={`text-[10px] ${statusColors[g.status] || ""}`}>{g.status}</Badge>
+                                        <span className="capitalize text-muted-foreground">{g.type}</span>
+                                        {g.output_url && (
+                                          <a href={g.output_url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-xs">Ver resultado</a>
+                                        )}
+                                        {g.error_message && (
+                                          <span className="text-destructive text-xs truncate max-w-xs">{g.error_message}</span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground">Nenhuma geração encontrada.</p>
+                                )}
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </TabsContent>
 
-          {/* CLIENTES TAB */}
           <TabsContent value="clientes" className="space-y-4">
             <div className="flex justify-end">
               <Button variant="outline" size="sm" onClick={() => exportCSV("clientes")}>
@@ -512,34 +615,66 @@ export default function Admin() {
                 Exportar CSV
               </Button>
             </div>
-            <div className="border border-border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-card">
-                    <TableHead>Nome</TableHead>
-                    <TableHead>E-mail</TableHead>
-                    <TableHead>WhatsApp</TableHead>
-                    <TableHead>Pedidos</TableHead>
-                    <TableHead>Total gasto</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {customers.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground">Nenhum cliente encontrado.</TableCell></TableRow>
-                  ) : (
-                    customers.map((c) => (
-                      <TableRow key={c.email}>
-                        <TableCell className="font-medium">{c.name || "—"}</TableCell>
-                        <TableCell>{c.email}</TableCell>
-                        <TableCell>{c.whatsapp || "—"}</TableCell>
-                        <TableCell>{c.orders}</TableCell>
-                        <TableCell className="font-medium">R$ {c.total.toFixed(2)}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+
+            {customers.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">Nenhum cliente encontrado.</div>
+            ) : (
+              <>
+                <div className="grid gap-2.5 md:hidden">
+                  {customers.map((c) => (
+                    <div key={c.email} className="bg-card border border-border rounded-lg p-3 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">{c.name || "—"}</p>
+                          <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                            <Mail className="h-3 w-3 shrink-0" />
+                            {c.email}
+                          </p>
+                        </div>
+                        <p className="text-sm font-bold text-primary shrink-0">R$ {c.total.toFixed(2)}</p>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <ShoppingBag className="h-3 w-3" />
+                          {c.orders} pedido{c.orders > 1 ? "s" : ""}
+                        </span>
+                        {c.whatsapp && (
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {c.whatsapp}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="hidden md:block border border-border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-card border-b border-border">
+                        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Nome</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">E-mail</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">WhatsApp</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Pedidos</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Total gasto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {customers.map((c) => (
+                        <tr key={c.email} className="border-b border-border last:border-0">
+                          <td className="px-4 py-3 font-medium">{c.name || "—"}</td>
+                          <td className="px-4 py-3">{c.email}</td>
+                          <td className="px-4 py-3">{c.whatsapp || "—"}</td>
+                          <td className="px-4 py-3">{c.orders}</td>
+                          <td className="px-4 py-3 font-medium">R$ {c.total.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </TabsContent>
         </Tabs>
       </main>
