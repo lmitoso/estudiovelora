@@ -6,12 +6,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-
-const FOLLOW_UP_PROMPTS: Record<string, string> = {
-  check_in: "Gere uma mensagem curta e elegante de follow-up para um lead que não respondeu há algumas horas. Tom: consultivo, luxo silencioso. Máximo 2 frases. Sem excesso de emojis. Inclua uma pergunta suave.",
-  value_reminder: "Gere uma mensagem curta lembrando o valor de fotos/vídeos profissionais com IA para marcas. Compare brevemente com fotógrafo tradicional (custo e velocidade). Tom: elegante, nunca desesperado. Máximo 3 frases.",
-  urgency: "Gere uma mensagem curta com gatilho suave de escassez (ex: 'vagas limitadas esta semana'). Tom: luxo silencioso, nunca agressivo. Máximo 2 frases.",
+// Content Template SIDs for follow-ups
+// Only use templates approved for "WhatsApp business initiated"
+const FOLLOW_UP_TEMPLATES: Record<string, { contentSid: string; approved: boolean }> = {
+  check_in: { contentSid: "HX4e6613261f6e21c81fee455e18e5d453", approved: true },
+  value_reminder: { contentSid: "HXc00d783f41e93c2f85ce21348cba8294", approved: false },
+  urgency: { contentSid: "HX885de193cc6cddafa1014b9f68ba8b62", approved: false },
 };
 
 serve(async (req) => {
@@ -20,9 +20,6 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -58,33 +55,34 @@ serve(async (req) => {
           continue;
         }
 
-        // Generate follow-up message with AI if not pre-written
-        let messageContent = followUp.message_content;
-        if (!messageContent) {
-          const prompt = FOLLOW_UP_PROMPTS[followUp.type] || FOLLOW_UP_PROMPTS.check_in;
-
-          const aiResponse = await fetch(AI_GATEWAY_URL, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${LOVABLE_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "google/gemini-2.5-flash-lite",
-              messages: [
-                { role: "system", content: "Você é a assistente de vendas da Velora, um estúdio de direção de arte com IA. Responda apenas com a mensagem, sem aspas ou prefixos." },
-                { role: "user", content: prompt + (conversation.context_summary ? `\n\nContexto: ${conversation.context_summary}` : "") },
-              ],
-              max_tokens: 200,
-              temperature: 0.8,
-            }),
-          });
-
-          const aiData = await aiResponse.json();
-          messageContent = aiData.choices?.[0]?.message?.content || "Olá! Gostaria de saber se ainda tem interesse em criar sua campanha visual com a Velora. Estamos à disposição! ✨";
+        // Determine template to use
+        const template = FOLLOW_UP_TEMPLATES[followUp.type];
+        
+        // If template not approved, fall back to check_in
+        const useTemplate = template?.approved ? template : FOLLOW_UP_TEMPLATES.check_in;
+        
+        if (!useTemplate.approved) {
+          console.log(`Template for type "${followUp.type}" not approved, skipping.`);
+          await supabase
+            .from("follow_up_schedule")
+            .update({ status: "cancelled" })
+            .eq("id", followUp.id);
+          continue;
         }
 
-        // Send via whatsapp-send
+        // Get lead first name
+        const firstName = conversation.whatsapp_number; // fallback
+        let leadName = "there";
+        if (conversation.lead_id) {
+          const { data: lead } = await supabase
+            .from("leads")
+            .select("name")
+            .eq("id", conversation.lead_id)
+            .single();
+          if (lead) leadName = lead.name.split(" ")[0];
+        }
+
+        // Send via whatsapp-send using approved template
         await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/whatsapp-send`, {
           method: "POST",
           headers: {
@@ -93,7 +91,8 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             to: conversation.whatsapp_number,
-            body: messageContent,
+            contentSid: useTemplate.contentSid,
+            contentVariables: JSON.stringify({ "1": leadName }),
             conversationId: conversation.id,
             messageType: "follow_up",
           }),
