@@ -74,7 +74,7 @@ serve(async (req) => {
       await supabase.from("conversation_messages").insert({
         conversation_id: conversationId,
         direction: "outbound",
-        content: body,
+        content: body || `[template:${contentSid}]`,
         message_type: messageType || "text",
         twilio_sid: data.sid,
       });
