@@ -55,33 +55,34 @@ serve(async (req) => {
           continue;
         }
 
-        // Generate follow-up message with AI if not pre-written
-        let messageContent = followUp.message_content;
-        if (!messageContent) {
-          const prompt = FOLLOW_UP_PROMPTS[followUp.type] || FOLLOW_UP_PROMPTS.check_in;
-
-          const aiResponse = await fetch(AI_GATEWAY_URL, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${LOVABLE_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "google/gemini-2.5-flash-lite",
-              messages: [
-                { role: "system", content: "Você é a assistente de vendas da Velora, um estúdio de direção de arte com IA. Responda apenas com a mensagem, sem aspas ou prefixos." },
-                { role: "user", content: prompt + (conversation.context_summary ? `\n\nContexto: ${conversation.context_summary}` : "") },
-              ],
-              max_tokens: 200,
-              temperature: 0.8,
-            }),
-          });
-
-          const aiData = await aiResponse.json();
-          messageContent = aiData.choices?.[0]?.message?.content || "Olá! Gostaria de saber se ainda tem interesse em criar sua campanha visual com a Velora. Estamos à disposição! ✨";
+        // Determine template to use
+        const template = FOLLOW_UP_TEMPLATES[followUp.type];
+        
+        // If template not approved, fall back to check_in
+        const useTemplate = template?.approved ? template : FOLLOW_UP_TEMPLATES.check_in;
+        
+        if (!useTemplate.approved) {
+          console.log(`Template for type "${followUp.type}" not approved, skipping.`);
+          await supabase
+            .from("follow_up_schedule")
+            .update({ status: "cancelled" })
+            .eq("id", followUp.id);
+          continue;
         }
 
-        // Send via whatsapp-send
+        // Get lead first name
+        const firstName = conversation.whatsapp_number; // fallback
+        let leadName = "there";
+        if (conversation.lead_id) {
+          const { data: lead } = await supabase
+            .from("leads")
+            .select("name")
+            .eq("id", conversation.lead_id)
+            .single();
+          if (lead) leadName = lead.name.split(" ")[0];
+        }
+
+        // Send via whatsapp-send using approved template
         await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/whatsapp-send`, {
           method: "POST",
           headers: {
@@ -90,7 +91,8 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             to: conversation.whatsapp_number,
-            body: messageContent,
+            contentSid: useTemplate.contentSid,
+            contentVariables: JSON.stringify({ "1": leadName }),
             conversationId: conversation.id,
             messageType: "follow_up",
           }),
