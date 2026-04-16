@@ -20,18 +20,34 @@ serve(async (req) => {
     const TWILIO_API_KEY = Deno.env.get("TWILIO_API_KEY");
     if (!TWILIO_API_KEY) throw new Error("TWILIO_API_KEY is not configured");
 
-    const { to, body, conversationId, messageType } = await req.json();
+    const { to, body, contentSid, contentVariables, conversationId, messageType } = await req.json();
 
-    if (!to || !body) {
-      return new Response(JSON.stringify({ error: "Missing 'to' or 'body'" }), {
+    if (!to || (!body && !contentSid)) {
+      return new Response(JSON.stringify({ error: "Missing 'to' and 'body' or 'contentSid'" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Send via Twilio WhatsApp sandbox
+    // Send via Twilio WhatsApp
     const fromNumber = Deno.env.get("TWILIO_WHATSAPP_FROM") || "whatsapp:+17403135891";
     const toWhatsapp = to.startsWith("whatsapp:") ? to : `whatsapp:${to}`;
+
+    const params: Record<string, string> = {
+      To: toWhatsapp,
+      From: fromNumber,
+    };
+
+    if (contentSid) {
+      // Template-based message (required for initiating conversations)
+      params.ContentSid = contentSid;
+      if (contentVariables) {
+        params.ContentVariables = contentVariables;
+      }
+    } else {
+      // Free-form text (only within 24h session window)
+      params.Body = body;
+    }
 
     const response = await fetch(`${GATEWAY_URL}/Messages.json`, {
       method: "POST",
@@ -40,11 +56,7 @@ serve(async (req) => {
         "X-Connection-Api-Key": TWILIO_API_KEY,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({
-        To: toWhatsapp,
-        From: fromNumber,
-        Body: body,
-      }),
+      body: new URLSearchParams(params),
     });
 
     const data = await response.json();
@@ -62,7 +74,7 @@ serve(async (req) => {
       await supabase.from("conversation_messages").insert({
         conversation_id: conversationId,
         direction: "outbound",
-        content: body,
+        content: body || `[template:${contentSid}]`,
         message_type: messageType || "text",
         twilio_sid: data.sid,
       });
