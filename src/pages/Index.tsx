@@ -40,10 +40,12 @@ const Index = () => {
       });
       if (error) throw error;
 
-      const whatsappUrl = buildWhatsAppUrl();
-      setRedirectUrl(whatsappUrl);
+      // Trigger automated welcome message via WhatsApp template
+      supabase.functions.invoke("welcome-lead", {
+        body: { name: form.name.trim(), whatsapp: form.whatsapp.trim() },
+      }).catch((err) => console.error("welcome-lead error:", err));
+
       setSubmitted(true);
-      window.location.assign(whatsappUrl);
     } catch (err: any) {
       toast({ title: "Erro ao enviar", description: err.message, variant: "destructive" });
     } finally {
