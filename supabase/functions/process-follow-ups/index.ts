@@ -6,12 +6,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-
-const FOLLOW_UP_PROMPTS: Record<string, string> = {
-  check_in: "Gere uma mensagem curta e elegante de follow-up para um lead que não respondeu há algumas horas. Tom: consultivo, luxo silencioso. Máximo 2 frases. Sem excesso de emojis. Inclua uma pergunta suave.",
-  value_reminder: "Gere uma mensagem curta lembrando o valor de fotos/vídeos profissionais com IA para marcas. Compare brevemente com fotógrafo tradicional (custo e velocidade). Tom: elegante, nunca desesperado. Máximo 3 frases.",
-  urgency: "Gere uma mensagem curta com gatilho suave de escassez (ex: 'vagas limitadas esta semana'). Tom: luxo silencioso, nunca agressivo. Máximo 2 frases.",
+// Content Template SIDs for follow-ups
+// Only use templates approved for "WhatsApp business initiated"
+const FOLLOW_UP_TEMPLATES: Record<string, { contentSid: string; approved: boolean }> = {
+  check_in: { contentSid: "HX4e6613261f6e21c81fee455e18e5d453", approved: true },
+  value_reminder: { contentSid: "HXc00d783f41e93c2f85ce21348cba8294", approved: false },
+  urgency: { contentSid: "HX885de193cc6cddafa1014b9f68ba8b62", approved: false },
 };
 
 serve(async (req) => {
