@@ -23,11 +23,7 @@ const Index = () => {
     return `https://wa.me/${VELORA_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
   };
 
-  const isInAppBrowser = () => {
-    const ua = navigator.userAgent || "";
-    return /Instagram|FBAN|FBAV|FB_IAB|Line|MicroMessenger|TikTok/i.test(ua);
-  };
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim() || !form.whatsapp.trim()) {
