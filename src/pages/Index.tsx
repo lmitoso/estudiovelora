@@ -23,11 +23,7 @@ const Index = () => {
     return `https://wa.me/${VELORA_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
   };
 
-  const isInAppBrowser = () => {
-    const ua = navigator.userAgent || "";
-    return /Instagram|FBAN|FBAV|FB_IAB|Line|MicroMessenger|TikTok/i.test(ua);
-  };
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim() || !form.whatsapp.trim()) {
@@ -37,31 +33,41 @@ const Index = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.from("leads").insert({
-        name: form.name.trim(),
-        email: form.email.trim().toLowerCase(),
-        whatsapp: form.whatsapp.trim(),
-        source: "campanha",
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/capture-lead`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim().toLowerCase(),
+          whatsapp: form.whatsapp.trim(),
+          source: "campanha",
+        }),
       });
-      if (error) throw error;
 
-      // Trigger automated welcome message via WhatsApp template
-      supabase.functions.invoke("welcome-lead", {
-        body: { name: form.name.trim(), whatsapp: form.whatsapp.trim() },
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `HTTP ${response.status}`);
+      }
+
+      // Fire-and-forget welcome message — never blocks the user
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/welcome-lead`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ name: form.name.trim(), whatsapp: form.whatsapp.trim() }),
       }).catch((err) => console.error("welcome-lead error:", err));
 
       setSubmitted(true);
     } catch (err: any) {
-      const isFetchError = err?.message?.includes("fetch") || err?.message?.includes("Failed");
-      if (isFetchError && isInAppBrowser()) {
-        toast({
-          title: "Abra no navegador externo",
-          description: "Toque nos 3 pontinhos do Instagram e escolha 'Abrir no navegador externo' (Chrome ou Safari).",
-          variant: "destructive",
-        });
-      } else {
-        toast({ title: "Erro ao enviar", description: err.message, variant: "destructive" });
-      }
+      toast({ title: "Erro ao enviar", description: err.message || "Tente novamente", variant: "destructive" });
     } finally {
       setLoading(false);
     }
