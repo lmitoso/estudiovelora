@@ -78,18 +78,30 @@ export default function Admin() {
     if (!loginPassword) return;
     setAuthLoading(true);
     try {
-      const res = await supabase.functions.invoke("verify-admin", {
-        body: { password: loginPassword },
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-admin`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ password: loginPassword }),
       });
-      if (res.error) throw res.error;
-      if (res.data?.valid) {
+      if (!response.ok) {
+        throw new Error(`Servidor retornou ${response.status}`);
+      }
+      const data = await response.json();
+      if (data?.valid) {
         setPassword(loginPassword);
         setAuthenticated(true);
         sessionStorage.setItem("admin_pwd", btoa(loginPassword));
       } else {
+        sessionStorage.removeItem("admin_pwd");
         toast({ title: "Senha incorreta", variant: "destructive" });
       }
     } catch (err: any) {
+      sessionStorage.removeItem("admin_pwd");
       toast({ title: "Erro na verificação", description: err.message, variant: "destructive" });
     } finally {
       setAuthLoading(false);
