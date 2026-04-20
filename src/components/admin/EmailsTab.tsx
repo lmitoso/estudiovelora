@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Search, Mail, Calendar, Flame } from "lucide-react";
+import { Search, Mail, Calendar } from "lucide-react";
 
 type Temperature = "hot" | "warm" | "cold";
 
