@@ -90,6 +90,27 @@ serve(async (req) => {
       });
     }
 
+    if (action === "emails") {
+      // Schedule + lead info
+      const { data: schedule, error: schedErr } = await supabase
+        .from("lead_email_schedule")
+        .select("id, lead_id, email_key, status, send_at, sent_at, conditional, error_message, created_at")
+        .order("send_at", { ascending: false })
+        .limit(2000);
+      if (schedErr) throw new Error(schedErr.message);
+
+      const { data: leads, error: leadsErr } = await supabase
+        .from("leads")
+        .select("id, name, email, track, unsubscribed, created_at")
+        .order("created_at", { ascending: false });
+      if (leadsErr) throw new Error(leadsErr.message);
+
+      return new Response(JSON.stringify({ data: { schedule: schedule || [], leads: leads || [] } }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Invalid action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
