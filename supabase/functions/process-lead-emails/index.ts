@@ -9,11 +9,21 @@ const corsHeaders = {
 
 // Mapeia email_key → nome da edge function que envia o email
 const EMAIL_FUNCTIONS: Record<string, string> = {
+  // Track aprender (curso)
   "lead-metodo-aprender": "send-aprender-metodo",
   "lead-manifesto-aprender": "send-aprender-manifesto",
   "lead-oportunidade-aprender": "send-aprender-oportunidade",
   "lead-urgencia-aprender": "send-aprender-urgencia",
+  // Track servico
+  "lead-welcome-servico": "send-servico-welcome",
+  "lead-prova-servico": "send-servico-prova",
+  "lead-autoridade-servico": "send-servico-autoridade",
+  "lead-briefing-servico": "send-servico-briefing",
+  "lead-reativacao-servico": "send-servico-reativacao",
 };
+
+// Janela mínima de silêncio do WhatsApp (em dias) para disparar emails condicionais
+const SILENCE_WINDOW_DAYS = 5;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -28,7 +38,7 @@ serve(async (req) => {
     // Buscar até 50 emails pendentes cujo horário já chegou
     const { data: pending, error } = await supabase
       .from("lead_email_schedule")
-      .select("id, lead_id, email_key, leads:lead_id(name, email)")
+      .select("id, lead_id, email_key, conditional, leads:lead_id(name, email)")
       .eq("status", "pending")
       .lte("send_at", new Date().toISOString())
       .limit(50);
@@ -43,6 +53,8 @@ serve(async (req) => {
 
     let sent = 0;
     let failed = 0;
+    let skipped = 0;
+    const silenceCutoff = new Date(Date.now() - SILENCE_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
     for (const item of pending) {
       const fnName = EMAIL_FUNCTIONS[item.email_key];
