@@ -15,6 +15,8 @@ const EMAIL_FUNCTIONS: Record<string, string> = {
   "lead-oportunidade-aprender": "send-aprender-oportunidade",
   "lead-urgencia-aprender": "send-aprender-urgencia",
   "lead-cruzamento-b-a": "send-cruzamento-b-a",
+  "lead-pack-oferta": "send-pack-oferta",
+  "lead-pack-upsell": "send-pack-upsell",
   // Track servico
   "lead-welcome-servico": "send-servico-welcome",
   "lead-prova-servico": "send-servico-prova",
