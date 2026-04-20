@@ -45,8 +45,16 @@ const Aprender = () => {
         throw new Error(errData.error || `HTTP ${response.status}`);
       }
 
+      const data = await response.json().catch(() => ({}));
+      const leadId = data?.lead_id as string | undefined;
+      if (leadId) {
+        try { localStorage.setItem("velora_lead_id", leadId); } catch { /* ignore */ }
+      }
+
       setSubmitted(true);
-      setTimeout(() => navigate("/curso"), 1500);
+      setTimeout(() => {
+        navigate(leadId ? `/curso?lead_id=${leadId}` : "/curso");
+      }, 1500);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Tente novamente em instantes.";
       setError(message);

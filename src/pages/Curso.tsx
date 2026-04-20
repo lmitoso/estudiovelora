@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Flame, GraduationCap, Bot, Camera, Clapperboard, Package, Rocket, BookOpen, Check, Star, Shield, MessageCircle } from "lucide-react";
@@ -5,6 +6,23 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 const PAYMENT_URL = "https://pay.kiwify.com.br/G0oqvsb";
 const WHATSAPP_URL = "https://wa.me/5598991722040?text=Ol%C3%A1%2C%20quero%20saber%20mais%20sobre%20o%20M%C3%A9todo%20Velora";
+
+const VISIT_DELAY_MS = 30_000;
+
+function trackCursoVisit(leadId: string) {
+  try {
+    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-curso-visit`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ lead_id: leadId }),
+      keepalive: true,
+    }).catch(() => { /* fire-and-forget */ });
+  } catch { /* ignore */ }
+}
 
 const fadeUp = {
   initial: { opacity: 0, y: 20, filter: "blur(4px)" },
