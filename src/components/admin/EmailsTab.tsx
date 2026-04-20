@@ -97,11 +97,31 @@ export default function EmailsTab({ password }: { password: string }) {
     return map;
   }, [schedule]);
 
+  // Temperature per lead — based on emails with status 'sent' in last 7 days
+  const tempByLead = useMemo(() => {
+    const cutoff = Date.now() - SEVEN_DAYS_MS;
+    const map: Record<string, Temperature> = {};
+    for (const lead of leads) {
+      const items = byLead[lead.id] || [];
+      const sent = items.filter((i) => i.status === "sent" && i.sent_at);
+      if (sent.length === 0) {
+        map[lead.id] = "cold";
+        continue;
+      }
+      const recentCount = sent.filter((i) => new Date(i.sent_at!).getTime() >= cutoff).length;
+      if (recentCount >= 3) map[lead.id] = "hot";
+      else if (recentCount >= 1) map[lead.id] = "warm";
+      else map[lead.id] = "warm"; // has sent but all older than 7d
+    }
+    return map;
+  }, [leads, byLead]);
+
   // Metrics
   const metrics = useMemo(() => {
     const totalSent = schedule.filter((s) => s.status === "sent").length;
     const scheduled = schedule.filter((s) => s.status === "pending").length;
     const unsubscribed = leads.filter((l) => l.unsubscribed).length;
+    const hotCount = leads.filter((l) => tempByLead[l.id] === "hot").length;
 
     const aprenderLeads = leads.filter((l) => l.track === "aprender");
     const reachedFinal = aprenderLeads.filter((l) => {
@@ -110,17 +130,28 @@ export default function EmailsTab({ password }: { password: string }) {
     }).length;
     const finalPct = aprenderLeads.length > 0 ? Math.round((reachedFinal / aprenderLeads.length) * 100) : 0;
 
-    return { totalSent, scheduled, unsubscribed, finalPct };
-  }, [schedule, leads, byLead]);
+    return { totalSent, scheduled, unsubscribed, finalPct, hotCount };
+  }, [schedule, leads, byLead, tempByLead]);
 
-  // Filtered leads (by search)
+  // Filtered leads (by search + temperature) and sorted by temperature
   const filteredLeads = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return leads;
-    return leads.filter(
-      (l) => l.name.toLowerCase().includes(q) || l.email.toLowerCase().includes(q)
-    );
-  }, [leads, search]);
+    let list = leads;
+    if (q) {
+      list = list.filter(
+        (l) => l.name.toLowerCase().includes(q) || l.email.toLowerCase().includes(q)
+      );
+    }
+    if (tempFilter !== "all") {
+      list = list.filter((l) => tempByLead[l.id] === tempFilter);
+    }
+    return [...list].sort((a, b) => {
+      const ra = temperatureRank(tempByLead[a.id] || "cold");
+      const rb = temperatureRank(tempByLead[b.id] || "cold");
+      if (ra !== rb) return ra - rb;
+      return (b.created_at || "").localeCompare(a.created_at || "");
+    });
+  }, [leads, search, tempFilter, tempByLead]);
 
   // Recent unsubscribes (last 20, ordered by created_at desc — leads are already desc)
   const recentUnsubs = useMemo(
