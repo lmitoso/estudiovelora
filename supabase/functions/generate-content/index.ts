@@ -305,9 +305,12 @@ serve(async (req) => {
 
     // Update order status — use generation_failed instead of generic failed
     const finalStatus = results.images.length > 0 ? "completed" : "generation_failed";
-    await supabase.from("orders").update({ status: finalStatus, updated_at: new Date().toISOString() }).eq("id", orderId);
+    const nowIso = new Date().toISOString();
+    const orderUpdate: Record<string, unknown> = { status: finalStatus, updated_at: nowIso };
+    if (finalStatus === "completed") orderUpdate.delivered_at = nowIso;
+    await supabase.from("orders").update(orderUpdate).eq("id", orderId);
 
-    // Trigger delivery email if content was generated
+    // Trigger delivery email + schedule upsell (48h) if content was generated
     if (finalStatus === "completed") {
       try {
         const emailUrl = `${SUPABASE_URL}/functions/v1/send-delivery-email`;
@@ -327,6 +330,47 @@ serve(async (req) => {
         }
       } catch (emailError) {
         console.error("Email trigger error:", emailError);
+      }
+
+      // Schedule upsell email 48h after delivery — only if we have this lead in our list
+      try {
+        const { data: orderRow } = await supabase
+          .from("orders")
+          .select("email")
+          .eq("id", orderId)
+          .maybeSingle();
+
+        if (orderRow?.email) {
+          const { data: lead } = await supabase
+            .from("leads")
+            .select("id, unsubscribed")
+            .eq("email", orderRow.email.toLowerCase())
+            .maybeSingle();
+
+          if (lead?.id && !lead.unsubscribed) {
+            // Idempotency: skip if an upsell is already scheduled/sent for this lead
+            const { data: existingUpsell } = await supabase
+              .from("lead_email_schedule")
+              .select("id")
+              .eq("lead_id", lead.id)
+              .eq("email_key", "lead-upsell-servico")
+              .limit(1)
+              .maybeSingle();
+
+            if (!existingUpsell) {
+              const sendAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+              await supabase.from("lead_email_schedule").insert({
+                lead_id: lead.id,
+                email_key: "lead-upsell-servico",
+                send_at: sendAt,
+                conditional: false,
+              });
+              console.log(`Upsell scheduled for lead ${lead.id} at ${sendAt}`);
+            }
+          }
+        }
+      } catch (upsellError) {
+        console.error("Upsell scheduling error:", upsellError);
       }
     }
 

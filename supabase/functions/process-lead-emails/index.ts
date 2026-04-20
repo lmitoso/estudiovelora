@@ -20,6 +20,7 @@ const EMAIL_FUNCTIONS: Record<string, string> = {
   "lead-autoridade-servico": "send-servico-autoridade",
   "lead-briefing-servico": "send-servico-briefing",
   "lead-reativacao-servico": "send-servico-reativacao",
+  "lead-upsell-servico": "send-servico-upsell",
 };
 
 // Janela mínima de silêncio do WhatsApp (em dias) para disparar emails condicionais
