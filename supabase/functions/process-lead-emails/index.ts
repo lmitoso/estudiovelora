@@ -95,6 +95,7 @@ serve(async (req) => {
         }
       }
 
+      try {
         const resp = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
           method: "POST",
           headers: {
