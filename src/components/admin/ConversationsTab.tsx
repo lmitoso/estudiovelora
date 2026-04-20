@@ -42,6 +42,25 @@ const statusColors: Record<string, string> = {
   closed_lost: "bg-destructive/20 text-destructive border-destructive/30",
 };
 
+// Mapeia SIDs de templates Twilio aprovados para descrições humanizadas
+const templateLabels: Record<string, string> = {
+  HX909aba526ab38743bc5b43b321599c90: "Mensagem de boas-vindas Velora",
+};
+
+// Renderiza conteúdo da mensagem: se for um template bruto [template:HX...],
+// substitui pelo nome humanizado do template.
+function renderMessageContent(content: string): { text: string; isTemplate: boolean } {
+  const match = content.match(/^\[template:(HX[a-zA-Z0-9]+)\]$/);
+  if (match) {
+    const sid = match[1];
+    return {
+      text: templateLabels[sid] || "Mensagem de template aprovado",
+      isTemplate: true,
+    };
+  }
+  return { text: content, isTemplate: false };
+}
+
 export default function ConversationsTab({ password }: { password: string }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -167,29 +186,41 @@ export default function ConversationsTab({ password }: { password: string }) {
             </div>
           ) : (
             <div className="space-y-3">
-              {selectedMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.direction === "outbound" ? "justify-end" : "justify-start"}`}
-                >
+              {selectedMessages.map((msg) => {
+                const { text, isTemplate } = renderMessageContent(msg.content);
+                return (
                   <div
-                    className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
-                      msg.direction === "outbound"
-                        ? "bg-primary/20 text-foreground rounded-br-md"
-                        : "bg-muted text-foreground rounded-bl-md"
-                    }`}
+                    key={msg.id}
+                    className={`flex ${msg.direction === "outbound" ? "justify-end" : "justify-start"}`}
                   >
-                    <p className="text-[10px] font-medium mb-1 opacity-60">
-                      {msg.direction === "outbound" ? "Velora" : "Lead"}
-                    </p>
-                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                    <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
-                      <Clock className="h-2.5 w-2.5" />
-                      {new Date(msg.created_at).toLocaleString("pt-BR")}
-                    </p>
+                    <div
+                      className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
+                        msg.direction === "outbound"
+                          ? "bg-primary/20 text-foreground rounded-br-md"
+                          : "bg-muted text-foreground rounded-bl-md"
+                      }`}
+                    >
+                      <p className="text-[10px] font-medium mb-1 opacity-60">
+                        {msg.direction === "outbound" ? "Velora" : "Lead"}
+                      </p>
+                      {isTemplate ? (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
+                            Template
+                          </Badge>
+                          <p className="italic opacity-90">{text}</p>
+                        </div>
+                      ) : (
+                        <p className="whitespace-pre-wrap leading-relaxed">{text}</p>
+                      )}
+                      <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                        <Clock className="h-2.5 w-2.5" />
+                        {new Date(msg.created_at).toLocaleString("pt-BR")}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
           )}
