@@ -194,6 +194,47 @@ export type Database = {
           },
         ]
       }
+      lead_email_schedule: {
+        Row: {
+          created_at: string
+          email_key: string
+          error_message: string | null
+          id: string
+          lead_id: string
+          send_at: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email_key: string
+          error_message?: string | null
+          id?: string
+          lead_id: string
+          send_at: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email_key?: string
+          error_message?: string | null
+          id?: string
+          lead_id?: string
+          send_at?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_email_schedule_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           created_at: string

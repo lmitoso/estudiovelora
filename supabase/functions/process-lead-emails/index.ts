@@ -1,0 +1,107 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+// Mapeia email_key → nome da edge function que envia o email
+const EMAIL_FUNCTIONS: Record<string, string> = {
+  "lead-metodo-aprender": "send-aprender-metodo",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    // Buscar até 50 emails pendentes cujo horário já chegou
+    const { data: pending, error } = await supabase
+      .from("lead_email_schedule")
+      .select("id, lead_id, email_key, leads:lead_id(name, email)")
+      .eq("status", "pending")
+      .lte("send_at", new Date().toISOString())
+      .limit(50);
+
+    if (error) throw new Error(error.message);
+    if (!pending || pending.length === 0) {
+      return new Response(JSON.stringify({ ok: true, processed: 0 }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    let sent = 0;
+    let failed = 0;
+
+    for (const item of pending) {
+      const fnName = EMAIL_FUNCTIONS[item.email_key];
+      const lead = (item as any).leads;
+      if (!fnName || !lead?.email) {
+        await supabase
+          .from("lead_email_schedule")
+          .update({
+            status: "failed",
+            error_message: !fnName ? "unknown email_key" : "missing lead email",
+          })
+          .eq("id", item.id);
+        failed++;
+        continue;
+      }
+
+      try {
+        const resp = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify({
+            name: lead.name,
+            email: lead.email,
+            idempotency_key: `${item.email_key}-${item.id}`,
+          }),
+        });
+
+        if (!resp.ok) {
+          const txt = await resp.text().catch(() => "");
+          throw new Error(`status ${resp.status}: ${txt.slice(0, 200)}`);
+        }
+
+        await supabase
+          .from("lead_email_schedule")
+          .update({ status: "sent", sent_at: new Date().toISOString() })
+          .eq("id", item.id);
+        sent++;
+      } catch (err) {
+        console.error(`Failed to send ${item.email_key} for ${item.id}:`, err);
+        await supabase
+          .from("lead_email_schedule")
+          .update({
+            status: "failed",
+            error_message: err instanceof Error ? err.message : "unknown error",
+          })
+          .eq("id", item.id);
+        failed++;
+      }
+    }
+
+    return new Response(JSON.stringify({ ok: true, processed: pending.length, sent, failed }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("process-lead-emails error:", error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
