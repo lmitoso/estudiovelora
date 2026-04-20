@@ -40,6 +40,26 @@ serve(async (req) => {
       .single();
     if (error) throw new Error(error.message);
 
+    // Trigger welcome email for aprender track
+    if (track === 'aprender') {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const functionUrl = `${supabaseUrl}/functions/v1/send-aprender-welcome`;
+        
+        await fetch(functionUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!}`,
+          },
+          body: JSON.stringify({ name, email }),
+        });
+      } catch (emailError) {
+        console.error("Failed to send welcome email:", emailError);
+        // Don't fail the lead capture if email fails
+      }
+    }
+
     return new Response(JSON.stringify({ ok: true, lead_id: data?.id }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
