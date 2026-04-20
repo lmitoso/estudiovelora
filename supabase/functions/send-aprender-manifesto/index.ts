@@ -10,6 +10,7 @@ const RESEND_API_URL = "https://api.resend.com";
 const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "contato@estudiovelora.net";
 const FROM_NAME = Deno.env.get("RESEND_FROM_NAME") || "Estúdio Velora";
 const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
+const COURSE_URL = "https://pay.kiwify.com.br/G0oqvsb";
 
 const divider = `
               <tr>
@@ -23,12 +24,11 @@ const buildHtml = (name: string) => `<!doctype html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>O método. Em 3 dias. Do zero.</title>
+    <title>Por que a maioria das marcas ainda parece igual</title>
   </head>
   <body style="margin:0;padding:0;background:#fafaf7;font-family:Raleway,Arial,sans-serif;color:#1a1a1a;">
-    <!-- Pré-header oculto -->
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;visibility:hidden;mso-hide:all;">
-      Não é sobre ferramentas. É sobre intenção.
+      E o que separa quem cria com intenção de quem apenas produz conteúdo.
     </div>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fafaf7;padding:48px 16px;">
@@ -36,7 +36,6 @@ const buildHtml = (name: string) => `<!doctype html>
         <td align="center">
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fafaf7;">
 
-            <!-- Saudação -->
             <tr>
               <td style="padding:0 24px 24px 24px;">
                 <p style="font-family:Georgia,'Cormorant Garamond',serif;font-size:18px;line-height:1.8;color:#1a1a1a;margin:0;">
@@ -45,100 +44,66 @@ const buildHtml = (name: string) => `<!doctype html>
               </td>
             </tr>
 
-            <!-- Abertura -->
-            <tr>
-              <td style="padding:0 24px;">
-                <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;margin:0;">
-                  Ontem você pediu o mini-método. Aqui está.
-                </p>
-              </td>
-            </tr>
-
-            ${divider}
-
-            <!-- DIA 1 -->
+            <!-- Bloco 1 -->
             <tr>
               <td style="padding:0 24px;">
                 <p style="font-family:Georgia,'Cormorant Garamond',serif;font-weight:700;font-size:18px;line-height:1.8;color:#1a1a1a;margin:0 0 16px;">
-                  DIA 1 — Intenção antes de imagem
+                  Por que tudo parece igual.
                 </p>
                 <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;margin:0 0 16px;">
-                  Antes de abrir qualquer ferramenta de IA, você precisa responder três perguntas: Para quem é essa campanha? O que ela precisa fazer sentir? Que referência visual traduz isso?
+                  Olha o feed de qualquer marca pequena hoje. Olha o feed de outra do mesmo nicho. E mais uma. Em algum momento você percebe: tudo começa a se parecer com tudo.
                 </p>
                 <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;margin:0 0 16px;">
-                  A maioria das pessoas pula essa etapa e vai direto para o prompt. O resultado é sempre genérico — porque a IA só é tão específica quanto a instrução que recebe.
+                  Não é coincidência. É consequência. As ferramentas ficaram democráticas — qualquer pessoa hoje gera uma imagem em segundos. Quando todo mundo tem acesso ao mesmo recurso, o recurso deixa de ser o diferencial.
                 </p>
                 <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;margin:0;">
-                  Dedique 30 minutos do primeiro dia só a isso. Escreva as respostas. Salve referências no Pinterest ou no seu celular. Esse é o seu briefing — e ele vale mais do que qualquer ferramenta.
+                  O diferencial voltou para o lugar de onde nunca devia ter saído: o olhar. A intenção. A direção por trás da imagem. Isso tem nome — direção artística.
                 </p>
               </td>
             </tr>
 
             ${divider}
 
-            <!-- DIA 2 -->
+            <!-- Bloco 2 -->
             <tr>
               <td style="padding:0 24px;">
                 <p style="font-family:Georgia,'Cormorant Garamond',serif;font-weight:700;font-size:18px;line-height:1.8;color:#1a1a1a;margin:0 0 16px;">
-                  DIA 2 — Construção com direção
+                  A IA não é o produto.
                 </p>
                 <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;margin:0 0 16px;">
-                  Com o briefing em mãos, você entra nas ferramentas com intenção. O processo que usamos no estúdio tem três camadas:
+                  No estúdio, a gente não vende prompt. Não vende ferramenta. Não vende automação.
                 </p>
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;">
-                  <tr>
-                    <td style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;padding:0 0 8px 0;">
-                      <span style="color:#C9A96E;">→</span>&nbsp;<strong>Geração</strong> — criar as primeiras imagens a partir do briefing, testando variações de luz, paleta e composição.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;padding:0 0 8px 0;">
-                      <span style="color:#C9A96E;">→</span>&nbsp;<strong>Curadoria</strong> — selecionar com olhar editorial. Não o que ficou bonito. O que ficou verdadeiro para a marca.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;padding:0;">
-                      <span style="color:#C9A96E;">→</span>&nbsp;<strong>Refinamento</strong> — ajustar o que a IA não acertou sozinha. Proporção, atmosfera, coerência entre os frames.
-                    </td>
-                  </tr>
-                </table>
                 <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;margin:0;">
-                  Esse é o trabalho que diferencia um criativo de IA de um diretor de arte com IA.
+                  A IA é o meio. O produto é a decisão criativa que vem antes de qualquer prompt — escolher referência, definir paleta, traduzir uma sensação em imagem. É isso que faz uma campanha existir. O resto é execução.
                 </p>
               </td>
             </tr>
 
             ${divider}
 
-            <!-- DIA 3 -->
+            <!-- Bloco 3 -->
             <tr>
               <td style="padding:0 24px;">
                 <p style="font-family:Georgia,'Cormorant Garamond',serif;font-weight:700;font-size:18px;line-height:1.8;color:#1a1a1a;margin:0 0 16px;">
-                  DIA 3 — Entrega com narrativa
+                  Se você chegou até aqui, já sente isso.
                 </p>
                 <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;margin:0 0 16px;">
-                  Uma campanha não é uma coleção de imagens bonitas. É uma história contada em frames.
-                </p>
-                <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;margin:0 0 16px;">
-                  No terceiro dia, você organiza o material em sequência narrativa — começo, meio, fim visual. Pensa na legenda, no tom, no que cada imagem comunica sozinha e o que ela comunica em conjunto.
+                  Você não está procurando mais um tutorial de prompt. Não quer só dominar uma ferramenta a mais. Você quer desenvolver um olhar — uma forma própria de criar que não dependa da próxima atualização do próximo modelo.
                 </p>
                 <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;margin:0;">
-                  Quando isso está alinhado, você tem uma campanha. Não um feed.
+                  É exatamente isso que ensinamos.
                 </p>
               </td>
             </tr>
 
             ${divider}
 
-            <!-- Fechamento -->
+            <!-- CTA -->
             <tr>
               <td style="padding:0 24px;">
-                <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;margin:0 0 24px;">
-                  Esse método é o que ensinamos com profundidade no curso completo — com exemplos reais, prompts testados e direção artística passo a passo.
-                </p>
                 <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;margin:0;">
-                  <a href="https://pay.kiwify.com.br/G0oqvsb" style="color:#C9A96E;text-decoration:none;border-bottom:1px solid rgba(201,169,110,0.4);">
-                    → Conhecer o curso completo
+                  <a href="${COURSE_URL}" style="color:#C9A96E;text-decoration:none;border-bottom:1px solid rgba(201,169,110,0.4);">
+                    → Quero desenvolver meu olhar criativo
                   </a>
                 </p>
               </td>
@@ -165,9 +130,7 @@ const buildHtml = (name: string) => `<!doctype html>
 </html>`;
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const body = await req.json();
@@ -177,8 +140,7 @@ serve(async (req) => {
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return new Response(JSON.stringify({ error: "Invalid email" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -192,12 +154,10 @@ serve(async (req) => {
     if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
 
     const response = await fetch(`${RESEND_API_URL}/emails`, {
-      method: "POST",
-      headers,
+      method: "POST", headers,
       body: JSON.stringify({
-        from: FROM,
-        to: [email],
-        subject: "O método. Em 3 dias. Do zero.",
+        from: FROM, to: [email],
+        subject: "Por que a maioria das marcas ainda parece igual.",
         html: buildHtml(name),
       }),
     });
@@ -206,20 +166,16 @@ serve(async (req) => {
     if (!response.ok) {
       console.error("Resend error:", response.status, data);
       return new Response(JSON.stringify({ error: data?.message || "send failed" }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     return new Response(JSON.stringify({ ok: true, id: data?.id }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("send-aprender-metodo error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("send-aprender-manifesto error:", error);
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

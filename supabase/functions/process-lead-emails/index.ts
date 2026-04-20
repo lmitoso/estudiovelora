@@ -10,6 +10,9 @@ const corsHeaders = {
 // Mapeia email_key → nome da edge function que envia o email
 const EMAIL_FUNCTIONS: Record<string, string> = {
   "lead-metodo-aprender": "send-aprender-metodo",
+  "lead-manifesto-aprender": "send-aprender-manifesto",
+  "lead-oportunidade-aprender": "send-aprender-oportunidade",
+  "lead-urgencia-aprender": "send-aprender-urgencia",
 };
 
 serve(async (req) => {

@@ -58,18 +58,25 @@ serve(async (req) => {
         console.error("Failed to send welcome email:", emailError);
       }
 
-      // Agendar email "lead-metodo-aprender" para 1 dia depois
+      // Agendar sequência completa de emails (dia 1, 3, 6, 10)
       try {
-        const sendAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-        await supabase
-          .from("lead_email_schedule")
-          .insert({
+        const now = Date.now();
+        const day = 24 * 60 * 60 * 1000;
+        const sequence = [
+          { email_key: "lead-metodo-aprender", days: 1 },
+          { email_key: "lead-manifesto-aprender", days: 3 },
+          { email_key: "lead-oportunidade-aprender", days: 6 },
+          { email_key: "lead-urgencia-aprender", days: 10 },
+        ];
+        await supabase.from("lead_email_schedule").insert(
+          sequence.map((s) => ({
             lead_id: data.id,
-            email_key: "lead-metodo-aprender",
-            send_at: sendAt,
-          });
+            email_key: s.email_key,
+            send_at: new Date(now + s.days * day).toISOString(),
+          }))
+        );
       } catch (scheduleError) {
-        console.error("Failed to schedule metodo email:", scheduleError);
+        console.error("Failed to schedule aprender sequence:", scheduleError);
       }
     }
 
