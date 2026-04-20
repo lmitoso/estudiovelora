@@ -67,3 +67,6 @@ verify_jwt = false
 
 [functions.send-servico-reativacao]
 verify_jwt = false
+
+[functions.unsubscribe-lead]
+verify_jwt = false
