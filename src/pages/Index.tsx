@@ -46,6 +46,7 @@ const Index = () => {
           email: form.email.trim().toLowerCase(),
           whatsapp: form.whatsapp.trim(),
           source: "campanha",
+          track: "servico",
         }),
       });
 

@@ -52,3 +52,18 @@ verify_jwt = false
 
 [functions.send-aprender-urgencia]
 verify_jwt = false
+
+[functions.send-servico-welcome]
+verify_jwt = false
+
+[functions.send-servico-prova]
+verify_jwt = false
+
+[functions.send-servico-autoridade]
+verify_jwt = false
+
+[functions.send-servico-briefing]
+verify_jwt = false
+
+[functions.send-servico-reativacao]
+verify_jwt = false

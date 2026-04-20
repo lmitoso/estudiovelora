@@ -80,6 +80,44 @@ serve(async (req) => {
       }
     }
 
+    // Track 'servico': dispara welcome imediato + agenda sequência (dias 1, 3, 5, 10)
+    if (track === 'servico' && data?.id) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        await fetch(`${supabaseUrl}/functions/v1/send-servico-welcome`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!}`,
+          },
+          body: JSON.stringify({ name, email, idempotency_key: `welcome-servico-${data.id}` }),
+        });
+      } catch (emailError) {
+        console.error("Failed to send servico welcome email:", emailError);
+      }
+
+      try {
+        const now = Date.now();
+        const day = 24 * 60 * 60 * 1000;
+        const sequence = [
+          { email_key: "lead-prova-servico", days: 1, conditional: false },
+          { email_key: "lead-autoridade-servico", days: 3, conditional: false },
+          { email_key: "lead-briefing-servico", days: 5, conditional: false },
+          { email_key: "lead-reativacao-servico", days: 10, conditional: true },
+        ];
+        await supabase.from("lead_email_schedule").insert(
+          sequence.map((s) => ({
+            lead_id: data.id,
+            email_key: s.email_key,
+            send_at: new Date(now + s.days * day).toISOString(),
+            conditional: s.conditional,
+          }))
+        );
+      } catch (scheduleError) {
+        console.error("Failed to schedule servico sequence:", scheduleError);
+      }
+    }
+
     return new Response(JSON.stringify({ ok: true, lead_id: data?.id }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

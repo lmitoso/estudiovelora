@@ -196,6 +196,7 @@ export type Database = {
       }
       lead_email_schedule: {
         Row: {
+          conditional: boolean
           created_at: string
           email_key: string
           error_message: string | null
@@ -206,6 +207,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          conditional?: boolean
           created_at?: string
           email_key: string
           error_message?: string | null
@@ -216,6 +218,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          conditional?: boolean
           created_at?: string
           email_key?: string
           error_message?: string | null
