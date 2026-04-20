@@ -36,6 +36,7 @@ const CTA = () => (
     href={PAYMENT_URL}
     target="_blank"
     rel="noopener noreferrer"
+    data-cta="buy"
     whileHover={{ scale: 1.03 }}
     whileTap={{ scale: 0.97 }}
     className="velora-btn-primary velora-glow inline-flex items-center gap-3 px-10 py-5 text-base"
