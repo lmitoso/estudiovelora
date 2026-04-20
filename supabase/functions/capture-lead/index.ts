@@ -40,12 +40,12 @@ serve(async (req) => {
       .single();
     if (error) throw new Error(error.message);
 
-    // Trigger welcome email for aprender track
-    if (track === 'aprender') {
+    // Trigger welcome email for aprender track + agendar email DIA 1 (+1 dia)
+    if (track === 'aprender' && data?.id) {
       try {
         const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
         const functionUrl = `${supabaseUrl}/functions/v1/send-aprender-welcome`;
-        
+
         await fetch(functionUrl, {
           method: "POST",
           headers: {
@@ -56,7 +56,20 @@ serve(async (req) => {
         });
       } catch (emailError) {
         console.error("Failed to send welcome email:", emailError);
-        // Don't fail the lead capture if email fails
+      }
+
+      // Agendar email "lead-metodo-aprender" para 1 dia depois
+      try {
+        const sendAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        await supabase
+          .from("lead_email_schedule")
+          .insert({
+            lead_id: data.id,
+            email_key: "lead-metodo-aprender",
+            send_at: sendAt,
+          });
+      } catch (scheduleError) {
+        console.error("Failed to schedule metodo email:", scheduleError);
       }
     }
 
