@@ -148,7 +148,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Velora Studio <onboarding@resend.dev>",
+        from: `${Deno.env.get("RESEND_FROM_NAME") || "Estúdio Velora"} <${Deno.env.get("RESEND_FROM_EMAIL") || "contato@estudiovelora.net"}>`,
         to: [order.email],
         subject: `✨ Seu conteúdo editorial está pronto — ${order.brand_name}`,
         html: emailHtml,
