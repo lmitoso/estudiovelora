@@ -37,3 +37,9 @@ verify_jwt = false
 
 [functions.welcome-lead]
 verify_jwt = false
+
+[functions.process-lead-emails]
+verify_jwt = false
+
+[functions.send-aprender-metodo]
+verify_jwt = false
