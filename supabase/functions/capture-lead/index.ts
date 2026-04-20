@@ -33,6 +33,21 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // --- Deduplication: check if lead with same email already exists ---
+    const { data: existing } = await supabase
+      .from("leads")
+      .select("id")
+      .eq("email", email)
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      return new Response(
+        JSON.stringify({ ok: true, lead_id: existing.id, duplicate: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { data, error } = await supabase
       .from("leads")
       .insert({ name, email, whatsapp: whatsapp || null, source, track })

@@ -45,24 +45,6 @@ const Aprender = () => {
         throw new Error(errData.error || `HTTP ${response.status}`);
       }
 
-      const data = await response.json().catch(() => ({}));
-      const leadId = data.lead_id;
-
-      // Fire-and-forget envio do mini-método
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-aprender-welcome`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          idempotency_key: leadId ? `lead-welcome-aprender-${leadId}` : `lead-welcome-aprender-${email}`,
-        }),
-      }).catch((err) => console.error("send-aprender-welcome error:", err));
-
       setSubmitted(true);
       setTimeout(() => navigate("/curso"), 1500);
     } catch (err: unknown) {
