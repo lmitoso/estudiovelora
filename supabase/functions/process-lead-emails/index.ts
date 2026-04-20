@@ -87,7 +87,30 @@ serve(async (req) => {
         continue;
       }
 
-      // Email condicional: só dispara se NÃO houve atividade recente no WhatsApp
+      // Email de cruzamento B→A: pular se o lead já comprou (qualquer pedido pago com mesmo email)
+      if (item.email_key === "lead-cruzamento-b-a") {
+        const { data: paidOrder } = await supabase
+          .from("orders")
+          .select("id")
+          .eq("email", lead.email)
+          .eq("status", "paid")
+          .limit(1)
+          .maybeSingle();
+
+        if (paidOrder) {
+          await supabase
+            .from("lead_email_schedule")
+            .update({
+              status: "skipped",
+              error_message: "lead already purchased",
+              sent_at: new Date().toISOString(),
+            })
+            .eq("id", item.id);
+          skipped++;
+          continue;
+        }
+      }
+
       if (item.conditional) {
         const { data: recentMsgs } = await supabase
           .from("conversations")
