@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut, Download, Users, MessageSquare, Phone, Mail, Calendar, ShoppingBag, DollarSign } from "lucide-react";
+import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut, Download, Users, MessageSquare, Phone, Mail, Calendar, ShoppingBag, DollarSign, Send } from "lucide-react";
 import ConversationsTab from "@/components/admin/ConversationsTab";
+import EmailsTab from "@/components/admin/EmailsTab";
 import { useNavigate } from "react-router-dom";
 
 type Order = {
@@ -344,12 +345,20 @@ export default function Admin() {
               <MessageSquare className="h-3.5 w-3.5 mr-1" />
               Conversas
             </TabsTrigger>
+            <TabsTrigger value="emails" className="text-xs sm:text-sm">
+              <Send className="h-3.5 w-3.5 mr-1" />
+              Emails
+            </TabsTrigger>
             <TabsTrigger value="pedidos" className="text-xs sm:text-sm">Pedidos</TabsTrigger>
             <TabsTrigger value="clientes" className="text-xs sm:text-sm">Clientes</TabsTrigger>
           </TabsList>
 
           <TabsContent value="conversas">
             <ConversationsTab password={password} />
+          </TabsContent>
+
+          <TabsContent value="emails">
+            <EmailsTab password={password} />
           </TabsContent>
 
           <TabsContent value="leads" className="space-y-4">
