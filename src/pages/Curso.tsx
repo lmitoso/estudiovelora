@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Flame, GraduationCap, Bot, Camera, Clapperboard, Package, Rocket, BookOpen, Check, Star, Shield, MessageCircle } from "lucide-react";
@@ -5,6 +6,23 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 const PAYMENT_URL = "https://pay.kiwify.com.br/G0oqvsb";
 const WHATSAPP_URL = "https://wa.me/5598991722040?text=Ol%C3%A1%2C%20quero%20saber%20mais%20sobre%20o%20M%C3%A9todo%20Velora";
+
+const VISIT_DELAY_MS = 30_000;
+
+function trackCursoVisit(leadId: string) {
+  try {
+    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-curso-visit`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ lead_id: leadId }),
+      keepalive: true,
+    }).catch(() => { /* fire-and-forget */ });
+  } catch { /* ignore */ }
+}
 
 const fadeUp = {
   initial: { opacity: 0, y: 20, filter: "blur(4px)" },
@@ -18,6 +36,7 @@ const CTA = () => (
     href={PAYMENT_URL}
     target="_blank"
     rel="noopener noreferrer"
+    data-cta="buy"
     whileHover={{ scale: 1.03 }}
     whileTap={{ scale: 0.97 }}
     className="velora-btn-primary velora-glow inline-flex items-center gap-3 px-10 py-5 text-base"
@@ -89,6 +108,42 @@ const faqItems = [
 
 export default function Aprender() {
   const navigate = useNavigate();
+  const triggeredRef = useRef(false);
+
+  useEffect(() => {
+    let leadId: string | null = null;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl = params.get("lead_id");
+      if (fromUrl) localStorage.setItem("velora_lead_id", fromUrl);
+      leadId = fromUrl || localStorage.getItem("velora_lead_id");
+    } catch { /* ignore */ }
+
+    if (!leadId) return;
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      if (cancelled || triggeredRef.current) return;
+      triggeredRef.current = true;
+      trackCursoVisit(leadId!);
+    }, VISIT_DELAY_MS);
+
+    // Cancel if user clicks the buy CTA before the timer fires
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[data-cta="buy"]')) {
+        cancelled = true;
+        window.clearTimeout(timer);
+      }
+    };
+    document.addEventListener("click", onClick, true);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      document.removeEventListener("click", onClick, true);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">

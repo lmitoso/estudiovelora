@@ -110,7 +110,61 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ processed }), {
+    // ===== Process curso visit triggers (Track B follow-up) =====
+    let cursoProcessed = 0;
+    try {
+      const cutoff = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      const { data: visitTriggers } = await supabase
+        .from("curso_visit_triggers")
+        .select("id, lead_id, leads(name, whatsapp, unsubscribed)")
+        .eq("status", "pending")
+        .lte("triggered_at", cutoff)
+        .limit(20);
+
+      for (const t of (visitTriggers || []) as any[]) {
+        try {
+          const lead = t.leads;
+          if (!lead || lead.unsubscribed || !lead.whatsapp) {
+            await supabase
+              .from("curso_visit_triggers")
+              .update({ status: "cancelled", sent_at: new Date().toISOString() })
+              .eq("id", t.id);
+            continue;
+          }
+
+          const firstName = (lead.name || "").split(" ")[0] || "tudo bem";
+          const message =
+            `Oi, ${firstName} 👋\n\n` +
+            `Vi que você conheceu o curso da Velora.\n\n` +
+            `Ficou alguma dúvida sobre o conteúdo ou como funciona? Posso te ajudar a entender se faz sentido para o seu momento agora.`;
+
+          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/whatsapp-send`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+            },
+            body: JSON.stringify({
+              to: lead.whatsapp,
+              body: message,
+              messageType: "curso_visit_followup",
+            }),
+          });
+
+          await supabase
+            .from("curso_visit_triggers")
+            .update({ status: "sent", sent_at: new Date().toISOString() })
+            .eq("id", t.id);
+          cursoProcessed++;
+        } catch (err) {
+          console.error(`Failed to process curso trigger ${(t as any).id}:`, err);
+        }
+      }
+    } catch (err) {
+      console.error("curso visit triggers loop failed:", err);
+    }
+
+    return new Response(JSON.stringify({ processed, cursoProcessed }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
