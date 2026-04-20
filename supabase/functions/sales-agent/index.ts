@@ -323,14 +323,40 @@ serve(async (req) => {
       content: m.content,
     }));
 
-    // Add context summary if available
+    // Fetch emails sent to this lead (for prompt personalization)
+    const lead = (conversation as any).leads;
+    let emailsSentList = "nenhum";
+    if (lead?.id) {
+      const { data: emailRows } = await supabase
+        .from("lead_email_schedule")
+        .select("email_key")
+        .eq("lead_id", lead.id)
+        .eq("status", "sent");
+      if (emailRows && emailRows.length > 0) {
+        emailsSentList = emailRows.map((r: any) => r.email_key).join(", ");
+      }
+    }
+
+    // Build conversation history string for prompt injection
+    const conversationHistoryStr = chatHistory.length
+      ? chatHistory
+          .map((m) => `${m.role === "user" ? "Lead" : "Luna"}: ${m.content}`)
+          .join("\n")
+      : "(primeira mensagem da conversa)";
+
+    // Inject dynamic variables into SYSTEM_PROMPT
+    const personalizedPrompt = SYSTEM_PROMPT
+      .replace("{lead_name}", lead?.name || "(desconhecido)")
+      .replace("{lead_track}", lead?.track || "null")
+      .replace("{lead_source}", lead?.source || "(não informado)")
+      .replace("{emails_sent}", emailsSentList)
+      .replace("{last_activity}", conversation.last_message_at || "(sem atividade prévia)")
+      .replace("{conversation_history}", conversationHistoryStr);
+
+    // Extra runtime context (não substitui o prompt-base, complementa)
     let contextInfo = "";
     if (conversation.context_summary) {
       contextInfo += `\n\nResumo do contexto: ${conversation.context_summary}`;
-    }
-    if (conversation.leads) {
-      contextInfo += `\nNome do lead: ${conversation.leads.name}`;
-      contextInfo += `\nE-mail: ${conversation.leads.email}`;
     }
     contextInfo += `\nEstágio atual: ${conversation.stage}`;
     contextInfo += `\nStatus: ${conversation.status}`;
@@ -345,7 +371,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT + contextInfo },
+          { role: "system", content: personalizedPrompt + contextInfo },
           ...chatHistory,
           { role: "user", content: inboundMessage },
         ],
