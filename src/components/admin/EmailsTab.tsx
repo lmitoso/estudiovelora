@@ -261,6 +261,11 @@ export default function EmailsTab({ password }: { password: string }) {
 
                   return (
                     <tr key={l.id} className="border-b border-border last:border-0 align-top">
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <Badge className={`text-[10px] ${temperatureBadge(tempByLead[l.id] || "cold")}`}>
+                          {temperatureLabel(tempByLead[l.id] || "cold")}
+                        </Badge>
+                      </td>
                       <td className="px-4 py-3 text-sm whitespace-nowrap">
                         {l.name}
                         {l.unsubscribed && (
