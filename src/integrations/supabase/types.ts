@@ -246,6 +246,7 @@ export type Database = {
           name: string
           source: string | null
           track: string | null
+          unsubscribed: boolean
           whatsapp: string | null
         }
         Insert: {
@@ -255,6 +256,7 @@ export type Database = {
           name: string
           source?: string | null
           track?: string | null
+          unsubscribed?: boolean
           whatsapp?: string | null
         }
         Update: {
@@ -264,6 +266,7 @@ export type Database = {
           name?: string
           source?: string | null
           track?: string | null
+          unsubscribed?: boolean
           whatsapp?: string | null
         }
         Relationships: []

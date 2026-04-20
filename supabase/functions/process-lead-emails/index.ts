@@ -38,7 +38,7 @@ serve(async (req) => {
     // Buscar até 50 emails pendentes cujo horário já chegou
     const { data: pending, error } = await supabase
       .from("lead_email_schedule")
-      .select("id, lead_id, email_key, conditional, leads:lead_id(name, email)")
+      .select("id, lead_id, email_key, conditional, leads:lead_id(name, email, unsubscribed)")
       .eq("status", "pending")
       .lte("send_at", new Date().toISOString())
       .limit(50);
@@ -68,6 +68,20 @@ serve(async (req) => {
           })
           .eq("id", item.id);
         failed++;
+        continue;
+      }
+
+      // Lead descadastrou — cancelar silenciosamente
+      if (lead.unsubscribed === true) {
+        await supabase
+          .from("lead_email_schedule")
+          .update({
+            status: "skipped",
+            error_message: "lead unsubscribed",
+            sent_at: new Date().toISOString(),
+          })
+          .eq("id", item.id);
+        skipped++;
         continue;
       }
 
@@ -105,6 +119,7 @@ serve(async (req) => {
           body: JSON.stringify({
             name: lead.name,
             email: lead.email,
+            lead_id: item.lead_id,
             idempotency_key: `${item.email_key}-${item.id}`,
           }),
         });

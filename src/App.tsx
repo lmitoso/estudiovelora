@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
 import Aprender from "./pages/Aprender";
 import Curso from "./pages/Curso";
+import EmailPreferencesUnsubscribe from "./pages/EmailPreferencesUnsubscribe";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/order/:orderId" element={<OrderContent />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/email-preferences/unsubscribe" element={<EmailPreferencesUnsubscribe />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
