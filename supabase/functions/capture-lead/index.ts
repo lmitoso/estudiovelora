@@ -79,6 +79,7 @@ serve(async (req) => {
         const day = 24 * 60 * 60 * 1000;
         const sequence = [
           { email_key: "lead-metodo-aprender", days: 1 },
+          { email_key: "lead-pack-oferta", days: 2 },
           { email_key: "lead-manifesto-aprender", days: 3 },
           { email_key: "lead-oportunidade-aprender", days: 6 },
           { email_key: "lead-urgencia-aprender", days: 10 },

@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
 import Aprender from "./pages/Aprender";
 import Curso from "./pages/Curso";
+import Pack from "./pages/Pack";
 import EmailPreferencesUnsubscribe from "./pages/EmailPreferencesUnsubscribe";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/aprender" element={<Aprender />} />
           <Route path="/curso" element={<Curso />} />
+          <Route path="/pack" element={<Pack />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/order/:orderId" element={<OrderContent />} />
           <Route path="/admin" element={<Admin />} />
