@@ -52,7 +52,7 @@ serve(async (req) => {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!}`,
           },
-          body: JSON.stringify({ name, email }),
+          body: JSON.stringify({ name, email, lead_id: data.id, idempotency_key: `welcome-aprender-${data.id}` }),
         });
       } catch (emailError) {
         console.error("Failed to send welcome email:", emailError);
@@ -90,7 +90,7 @@ serve(async (req) => {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!}`,
           },
-          body: JSON.stringify({ name, email, idempotency_key: `welcome-servico-${data.id}` }),
+          body: JSON.stringify({ name, email, lead_id: data.id, idempotency_key: `welcome-servico-${data.id}` }),
         });
       } catch (emailError) {
         console.error("Failed to send servico welcome email:", emailError);
