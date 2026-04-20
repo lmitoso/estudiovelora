@@ -175,14 +175,20 @@ export default function EmailsTab({ password }: { password: string }) {
   return (
     <div className="space-y-6">
       {/* Métricas */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-4">
         {[
+          { label: "🔥 Leads quentes agora", value: metrics.hotCount, highlight: true },
           { label: "Total enviado", value: metrics.totalSent },
           { label: "Agendados", value: metrics.scheduled },
           { label: "Cancelados", value: metrics.unsubscribed },
           { label: "Conclusão Track B", value: `${metrics.finalPct}%` },
         ].map((m) => (
-          <div key={m.label} className="bg-card border border-border rounded-lg p-2.5 sm:p-4">
+          <div
+            key={m.label}
+            className={`bg-card border rounded-lg p-2.5 sm:p-4 ${
+              m.highlight ? "border-orange-500/40 bg-orange-500/5" : "border-border"
+            }`}
+          >
             <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">{m.label}</p>
             <p className="text-lg sm:text-2xl font-bold mt-0.5 sm:mt-1" style={{ fontFamily: "var(--font-display)" }}>
               {m.value}
