@@ -2,8 +2,24 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Search, Mail, Calendar } from "lucide-react";
+import { Search, Mail, Calendar, Flame } from "lucide-react";
+
+type Temperature = "hot" | "warm" | "cold";
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+const temperatureBadge = (t: Temperature) => {
+  if (t === "hot") return "bg-orange-500/20 text-orange-400 border-orange-500/30";
+  if (t === "warm") return "bg-amber-400/20 text-amber-300 border-amber-400/30";
+  return "bg-slate-500/20 text-slate-400 border-slate-500/30";
+};
+
+const temperatureLabel = (t: Temperature) =>
+  t === "hot" ? "🔥 Quente" : t === "warm" ? "🌡 Morno" : "❄️ Frio";
+
+const temperatureRank = (t: Temperature) => (t === "hot" ? 0 : t === "warm" ? 1 : 2);
 
 type ScheduleItem = {
   id: string;
