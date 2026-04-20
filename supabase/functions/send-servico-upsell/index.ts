@@ -10,8 +10,7 @@ const RESEND_API_URL = "https://api.resend.com";
 const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "contato@estudiovelora.net";
 const FROM_NAME = Deno.env.get("RESEND_FROM_NAME") || "Estúdio Velora";
 const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
-const ESSENCIAL_URL = "https://wa.me/5598991722040?text=Ol%C3%A1%2C%20quero%20o%20Pacote%20Essencial%20por%20R%24%2097";
-const STUDIO_URL = "https://wa.me/5598991722040?text=Ol%C3%A1%2C%20quero%20conversar%20com%20o%20est%C3%BAdio";
+const IMPACTO_URL = "https://wa.me/5598991722040?text=Ol%C3%A1%2C%20quero%20o%20Pacote%20Impacto%20por%20R%24%20247";
 
 const divider = `
               <tr>
@@ -25,11 +24,11 @@ const buildHtml = (name: string, leadId: string) => `<!doctype html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Uma forma de começar sem compromisso.</title>
+    <title>Sua campanha ficou pronta. E agora?</title>
   </head>
   <body style="margin:0;padding:0;background:#fafaf7;font-family:Raleway,Arial,sans-serif;color:#1a1a1a;">
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;visibility:hidden;mso-hide:all;">
-      Teste o que a Velora faz pela sua marca por R$ 97.
+      O próximo passo natural para quem quer mais.
     </div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fafaf7;padding:48px 16px;">
       <tr><td align="center">
@@ -40,8 +39,19 @@ const buildHtml = (name: string, leadId: string) => `<!doctype html>
           </td></tr>
 
           <tr><td style="padding:0 24px;">
+            <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;margin:0 0 16px;">
+              Sua campanha foi entregue há 48 horas. Esperamos que o material tenha conversado com a sua marca da forma que você imaginava.
+            </p>
             <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;margin:0;">
-              Você recebeu nos últimos dias um pouco de como pensamos sobre imagem, marca e criação com IA. Antes de qualquer conversa maior, quero te apresentar uma forma de começar sem compromisso.
+              Gostou do resultado? Achou que faltou algo?
+            </p>
+          </td></tr>
+
+          ${divider}
+
+          <tr><td style="padding:0 24px;">
+            <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;margin:0 0 16px;">
+              Quem testa o Essencial e quer ir além normalmente sente falta de mais peças, mais variação, e um olhar mais personalizado para a marca. Foi pensando nisso que existe o próximo passo natural:
             </p>
           </td></tr>
 
@@ -51,24 +61,24 @@ const buildHtml = (name: string, leadId: string) => `<!doctype html>
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid rgba(201,169,110,0.4);border-radius:2px;">
               <tr><td style="padding:32px 28px;">
                 <p style="font-family:Raleway,Arial,sans-serif;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:#C9A96E;margin:0 0 12px;">
-                  Pacote Essencial
+                  Pacote Impacto
                 </p>
                 <p style="font-family:Georgia,'Cormorant Garamond',serif;font-size:32px;font-weight:300;color:#1a1a1a;margin:0 0 24px;">
-                  R$ 97
+                  R$ 247
                 </p>
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                   <tr><td style="font-family:Raleway,Arial,sans-serif;font-size:15px;line-height:1.8;color:#1a1a1a;padding:0 0 8px 0;">
-                    <span style="color:#C9A96E;">→</span>&nbsp;3 fotos editoriais com modelo IA
+                    <span style="color:#C9A96E;">→</span>&nbsp;5 fotos editoriais
                   </td></tr>
                   <tr><td style="font-family:Raleway,Arial,sans-serif;font-size:15px;line-height:1.8;color:#1a1a1a;padding:0 0 8px 0;">
-                    <span style="color:#C9A96E;">→</span>&nbsp;Direção de arte básica
+                    <span style="color:#C9A96E;">→</span>&nbsp;2 vídeos cinematográficos
                   </td></tr>
                   <tr><td style="font-family:Raleway,Arial,sans-serif;font-size:15px;line-height:1.8;color:#1a1a1a;padding:0 0 16px 0;">
-                    <span style="color:#C9A96E;">→</span>&nbsp;Entrega em até 48h úteis
+                    <span style="color:#C9A96E;">→</span>&nbsp;Direção criativa personalizada
                   </td></tr>
                 </table>
                 <p style="font-family:Georgia,'Cormorant Garamond',serif;font-style:italic;font-size:14px;line-height:1.7;color:#55575d;margin:0;">
-                  Ideal para testar o serviço e ter imagens prontas para o feed esta semana.
+                  Ideal para lançamentos e campanhas de temporada.
                 </p>
               </td></tr>
             </table>
@@ -77,24 +87,10 @@ const buildHtml = (name: string, leadId: string) => `<!doctype html>
           ${divider}
 
           <tr><td style="padding:0 24px;">
-            <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;margin:0 0 16px;">
-              Sem reunião, sem briefing longo. Você nos conta o produto e o tom da marca — a gente cria.
-            </p>
-            <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;margin:0;">
-              Se gostar do resultado, conversamos sobre campanhas maiores. Se não gostar, não tem problema. É assim que gostamos de começar.
-            </p>
-          </td></tr>
-
-          ${divider}
-
-          <tr><td style="padding:0 24px;">
-            <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;margin:0 0 12px;">
-              <a href="${ESSENCIAL_URL}" style="color:#C9A96E;text-decoration:none;border-bottom:1px solid rgba(201,169,110,0.4);">
-                → Quero meu Pacote Essencial por R$ 97
+            <p style="font-family:Raleway,Arial,sans-serif;font-size:16px;line-height:1.8;margin:0;">
+              <a href="${IMPACTO_URL}" style="color:#C9A96E;text-decoration:none;border-bottom:1px solid rgba(201,169,110,0.4);">
+                → Quero o Pacote Impacto por R$ 247
               </a>
-            </p>
-            <p style="font-family:Raleway,Arial,sans-serif;font-size:13px;line-height:1.8;color:#7a7a7a;margin:0;">
-              Prefere conversar antes? <a href="${STUDIO_URL}" style="color:#7a7a7a;text-decoration:underline;">Fale com o estúdio</a>
             </p>
           </td></tr>
 
@@ -142,7 +138,7 @@ serve(async (req) => {
       method: "POST", headers,
       body: JSON.stringify({
         from: FROM, to: [email],
-        subject: "Uma forma de começar sem compromisso.",
+        subject: "Sua campanha ficou pronta. E agora?",
         html: buildHtml(name, leadId),
       }),
     });
@@ -157,7 +153,7 @@ serve(async (req) => {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("send-servico-briefing error:", error);
+    console.error("send-servico-upsell error:", error);
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
