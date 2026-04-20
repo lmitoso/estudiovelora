@@ -7,7 +7,9 @@ const corsHeaders = {
 };
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
-const FROM = "Estúdio Velora <onboarding@resend.dev>";
+const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "contato@estudiovelora.net";
+const FROM_NAME = Deno.env.get("RESEND_FROM_NAME") || "Estúdio Velora";
+const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
 
 const buildHtml = (name: string) => `<!doctype html>
 <html lang="pt-BR">
