@@ -199,7 +199,7 @@ export default function EmailsTab({ password }: { password: string }) {
 
       {/* Por lead */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm sm:text-base font-semibold" style={{ fontFamily: "var(--font-display)" }}>
             Por lead
           </h2>
@@ -214,6 +214,26 @@ export default function EmailsTab({ password }: { password: string }) {
           </div>
         </div>
 
+        {/* Filtros de temperatura */}
+        <div className="flex flex-wrap gap-2">
+          {([
+            { key: "all", label: "Todos" },
+            { key: "hot", label: "🔥 Quentes" },
+            { key: "warm", label: "🌡 Mornos" },
+            { key: "cold", label: "❄️ Frios" },
+          ] as const).map((f) => (
+            <Button
+              key={f.key}
+              size="sm"
+              variant={tempFilter === f.key ? "default" : "outline"}
+              onClick={() => setTempFilter(f.key)}
+              className="h-7 text-xs px-3"
+            >
+              {f.label}
+            </Button>
+          ))}
+        </div>
+
         {filteredLeads.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm">Nenhum lead encontrado.</div>
         ) : (
@@ -221,6 +241,7 @@ export default function EmailsTab({ password }: { password: string }) {
             <table className="w-full">
               <thead>
                 <tr className="bg-card border-b border-border">
+                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Temperatura</th>
                   <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Nome</th>
                   <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Email</th>
                   <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Track</th>
