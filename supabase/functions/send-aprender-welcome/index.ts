@@ -64,7 +64,7 @@ const buildHtml = (name: string) => `<!doctype html>
 
             <tr>
               <td style="padding:24px 24px 0 24px;text-align:center;">
-                <a href="https://estudiovelora.lovable.app/curso"
+                <a href="https://pay.kiwify.com.br/G0oqvsb"
                   style="display:inline-block;background:#080808;color:#ffffff;text-decoration:none;
                   font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;
                   padding:16px 32px;border-radius:4px;">

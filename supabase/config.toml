@@ -43,3 +43,12 @@ verify_jwt = false
 
 [functions.send-aprender-metodo]
 verify_jwt = false
+
+[functions.send-aprender-manifesto]
+verify_jwt = false
+
+[functions.send-aprender-oportunidade]
+verify_jwt = false
+
+[functions.send-aprender-urgencia]
+verify_jwt = false
