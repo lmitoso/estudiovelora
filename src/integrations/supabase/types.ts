@@ -313,6 +313,7 @@ export type Database = {
           campaign_goal: string | null
           created_at: string
           customer_name: string | null
+          delivered_at: string | null
           email: string
           id: string
           model_type: string
@@ -330,6 +331,7 @@ export type Database = {
           campaign_goal?: string | null
           created_at?: string
           customer_name?: string | null
+          delivered_at?: string | null
           email: string
           id?: string
           model_type?: string
@@ -347,6 +349,7 @@ export type Database = {
           campaign_goal?: string | null
           created_at?: string
           customer_name?: string | null
+          delivered_at?: string | null
           email?: string
           id?: string
           model_type?: string
