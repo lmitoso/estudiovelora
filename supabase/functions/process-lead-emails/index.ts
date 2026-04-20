@@ -71,7 +71,30 @@ serve(async (req) => {
         continue;
       }
 
-      try {
+      // Email condicional: só dispara se NÃO houve atividade recente no WhatsApp
+      if (item.conditional) {
+        const { data: recentMsgs } = await supabase
+          .from("conversations")
+          .select("id, last_message_at")
+          .eq("lead_id", item.lead_id)
+          .gte("last_message_at", silenceCutoff)
+          .limit(1);
+
+        if (recentMsgs && recentMsgs.length > 0) {
+          // Houve mensagem recente — pular este envio (marcar como skipped)
+          await supabase
+            .from("lead_email_schedule")
+            .update({
+              status: "skipped",
+              error_message: "WhatsApp activity within silence window",
+              sent_at: new Date().toISOString(),
+            })
+            .eq("id", item.id);
+          skipped++;
+          continue;
+        }
+      }
+
         const resp = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
           method: "POST",
           headers: {
@@ -108,7 +131,7 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, processed: pending.length, sent, failed }), {
+    return new Response(JSON.stringify({ ok: true, processed: pending.length, sent, failed, skipped }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
