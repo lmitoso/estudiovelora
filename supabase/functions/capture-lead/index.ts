@@ -82,6 +82,7 @@ serve(async (req) => {
           { email_key: "lead-manifesto-aprender", days: 3 },
           { email_key: "lead-oportunidade-aprender", days: 6 },
           { email_key: "lead-urgencia-aprender", days: 10 },
+          { email_key: "lead-cruzamento-b-a", days: 15 },
         ];
         await supabase.from("lead_email_schedule").insert(
           sequence.map((s) => ({
