@@ -2,8 +2,24 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Search, Mail, Calendar } from "lucide-react";
+
+type Temperature = "hot" | "warm" | "cold";
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+const temperatureBadge = (t: Temperature) => {
+  if (t === "hot") return "bg-orange-500/20 text-orange-400 border-orange-500/30";
+  if (t === "warm") return "bg-amber-400/20 text-amber-300 border-amber-400/30";
+  return "bg-slate-500/20 text-slate-400 border-slate-500/30";
+};
+
+const temperatureLabel = (t: Temperature) =>
+  t === "hot" ? "🔥 Quente" : t === "warm" ? "🌡 Morno" : "❄️ Frio";
+
+const temperatureRank = (t: Temperature) => (t === "hot" ? 0 : t === "warm" ? 1 : 2);
 
 type ScheduleItem = {
   id: string;
@@ -50,6 +66,7 @@ export default function EmailsTab({ password }: { password: string }) {
   const [leads, setLeads] = useState<LeadItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [tempFilter, setTempFilter] = useState<"all" | Temperature>("all");
 
   const fetchData = async () => {
     setLoading(true);
@@ -80,11 +97,31 @@ export default function EmailsTab({ password }: { password: string }) {
     return map;
   }, [schedule]);
 
+  // Temperature per lead — based on emails with status 'sent' in last 7 days
+  const tempByLead = useMemo(() => {
+    const cutoff = Date.now() - SEVEN_DAYS_MS;
+    const map: Record<string, Temperature> = {};
+    for (const lead of leads) {
+      const items = byLead[lead.id] || [];
+      const sent = items.filter((i) => i.status === "sent" && i.sent_at);
+      if (sent.length === 0) {
+        map[lead.id] = "cold";
+        continue;
+      }
+      const recentCount = sent.filter((i) => new Date(i.sent_at!).getTime() >= cutoff).length;
+      if (recentCount >= 3) map[lead.id] = "hot";
+      else if (recentCount >= 1) map[lead.id] = "warm";
+      else map[lead.id] = "warm"; // has sent but all older than 7d
+    }
+    return map;
+  }, [leads, byLead]);
+
   // Metrics
   const metrics = useMemo(() => {
     const totalSent = schedule.filter((s) => s.status === "sent").length;
     const scheduled = schedule.filter((s) => s.status === "pending").length;
     const unsubscribed = leads.filter((l) => l.unsubscribed).length;
+    const hotCount = leads.filter((l) => tempByLead[l.id] === "hot").length;
 
     const aprenderLeads = leads.filter((l) => l.track === "aprender");
     const reachedFinal = aprenderLeads.filter((l) => {
@@ -93,17 +130,28 @@ export default function EmailsTab({ password }: { password: string }) {
     }).length;
     const finalPct = aprenderLeads.length > 0 ? Math.round((reachedFinal / aprenderLeads.length) * 100) : 0;
 
-    return { totalSent, scheduled, unsubscribed, finalPct };
-  }, [schedule, leads, byLead]);
+    return { totalSent, scheduled, unsubscribed, finalPct, hotCount };
+  }, [schedule, leads, byLead, tempByLead]);
 
-  // Filtered leads (by search)
+  // Filtered leads (by search + temperature) and sorted by temperature
   const filteredLeads = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return leads;
-    return leads.filter(
-      (l) => l.name.toLowerCase().includes(q) || l.email.toLowerCase().includes(q)
-    );
-  }, [leads, search]);
+    let list = leads;
+    if (q) {
+      list = list.filter(
+        (l) => l.name.toLowerCase().includes(q) || l.email.toLowerCase().includes(q)
+      );
+    }
+    if (tempFilter !== "all") {
+      list = list.filter((l) => tempByLead[l.id] === tempFilter);
+    }
+    return [...list].sort((a, b) => {
+      const ra = temperatureRank(tempByLead[a.id] || "cold");
+      const rb = temperatureRank(tempByLead[b.id] || "cold");
+      if (ra !== rb) return ra - rb;
+      return (b.created_at || "").localeCompare(a.created_at || "");
+    });
+  }, [leads, search, tempFilter, tempByLead]);
 
   // Recent unsubscribes (last 20, ordered by created_at desc — leads are already desc)
   const recentUnsubs = useMemo(
@@ -127,14 +175,20 @@ export default function EmailsTab({ password }: { password: string }) {
   return (
     <div className="space-y-6">
       {/* Métricas */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-4">
         {[
+          { label: "🔥 Leads quentes agora", value: metrics.hotCount, highlight: true },
           { label: "Total enviado", value: metrics.totalSent },
           { label: "Agendados", value: metrics.scheduled },
           { label: "Cancelados", value: metrics.unsubscribed },
           { label: "Conclusão Track B", value: `${metrics.finalPct}%` },
         ].map((m) => (
-          <div key={m.label} className="bg-card border border-border rounded-lg p-2.5 sm:p-4">
+          <div
+            key={m.label}
+            className={`bg-card border rounded-lg p-2.5 sm:p-4 ${
+              m.highlight ? "border-orange-500/40 bg-orange-500/5" : "border-border"
+            }`}
+          >
             <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">{m.label}</p>
             <p className="text-lg sm:text-2xl font-bold mt-0.5 sm:mt-1" style={{ fontFamily: "var(--font-display)" }}>
               {m.value}
@@ -145,7 +199,7 @@ export default function EmailsTab({ password }: { password: string }) {
 
       {/* Por lead */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm sm:text-base font-semibold" style={{ fontFamily: "var(--font-display)" }}>
             Por lead
           </h2>
@@ -160,6 +214,26 @@ export default function EmailsTab({ password }: { password: string }) {
           </div>
         </div>
 
+        {/* Filtros de temperatura */}
+        <div className="flex flex-wrap gap-2">
+          {([
+            { key: "all", label: "Todos" },
+            { key: "hot", label: "🔥 Quentes" },
+            { key: "warm", label: "🌡 Mornos" },
+            { key: "cold", label: "❄️ Frios" },
+          ] as const).map((f) => (
+            <Button
+              key={f.key}
+              size="sm"
+              variant={tempFilter === f.key ? "default" : "outline"}
+              onClick={() => setTempFilter(f.key)}
+              className="h-7 text-xs px-3"
+            >
+              {f.label}
+            </Button>
+          ))}
+        </div>
+
         {filteredLeads.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm">Nenhum lead encontrado.</div>
         ) : (
@@ -167,6 +241,7 @@ export default function EmailsTab({ password }: { password: string }) {
             <table className="w-full">
               <thead>
                 <tr className="bg-card border-b border-border">
+                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Temperatura</th>
                   <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Nome</th>
                   <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Email</th>
                   <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Track</th>
@@ -186,6 +261,11 @@ export default function EmailsTab({ password }: { password: string }) {
 
                   return (
                     <tr key={l.id} className="border-b border-border last:border-0 align-top">
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <Badge className={`text-[10px] ${temperatureBadge(tempByLead[l.id] || "cold")}`}>
+                          {temperatureLabel(tempByLead[l.id] || "cold")}
+                        </Badge>
+                      </td>
                       <td className="px-4 py-3 text-sm whitespace-nowrap">
                         {l.name}
                         {l.unsubscribed && (
