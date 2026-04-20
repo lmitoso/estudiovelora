@@ -11,7 +11,7 @@ const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "contato@estudiovelora.n
 const FROM_NAME = Deno.env.get("RESEND_FROM_NAME") || "Estúdio Velora";
 const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
 
-const buildHtml = (name: string) => `<!doctype html>
+const buildHtml = (name: string, leadId: string) => `<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
@@ -82,6 +82,7 @@ const buildHtml = (name: string) => `<!doctype html>
                 <p style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#999999;margin:0;">
                   Você está recebendo este email porque se cadastrou para receber o mini-método.
                 </p>
+                <p style="font-family:\'Helvetica Neue\',Arial,sans-serif;font-size:11px;color:#999999;margin:12px 0 0;"><a href="https://estudiovelora.lovable.app/email-preferences/unsubscribe?id=${leadId}" style="color:#C9A96E;text-decoration:none;">Cancelar inscrição</a></p>
               </td>
             </tr>
           </table>
@@ -101,6 +102,7 @@ serve(async (req) => {
     const name = String(body.name || "").trim().slice(0, 100);
     const email = String(body.email || "").trim().toLowerCase().slice(0, 255);
     const idempotencyKey = String(body.idempotency_key || "").trim().slice(0, 120);
+    const leadId = String(body.lead_id || "").trim().slice(0, 64);
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return new Response(JSON.stringify({ error: "Invalid email" }), {
@@ -127,7 +129,7 @@ serve(async (req) => {
         from: FROM,
         to: [email],
         subject: "O mini-método chega nos próximos minutos",
-        html: buildHtml(name),
+        html: buildHtml(name, leadId),
       }),
     });
 

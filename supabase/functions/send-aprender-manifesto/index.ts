@@ -19,7 +19,7 @@ const divider = `
                 </td>
               </tr>`;
 
-const buildHtml = (name: string) => `<!doctype html>
+const buildHtml = (name: string, leadId: string) => `<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
@@ -137,6 +137,7 @@ serve(async (req) => {
     const name = String(body.name || "").trim().slice(0, 100);
     const email = String(body.email || "").trim().toLowerCase().slice(0, 255);
     const idempotencyKey = String(body.idempotency_key || "").trim().slice(0, 120);
+    const leadId = String(body.lead_id || "").trim().slice(0, 64);
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return new Response(JSON.stringify({ error: "Invalid email" }), {
@@ -158,7 +159,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: FROM, to: [email],
         subject: "Por que a maioria das marcas ainda parece igual.",
-        html: buildHtml(name),
+        html: buildHtml(name, leadId),
       }),
     });
 
