@@ -108,6 +108,42 @@ const faqItems = [
 
 export default function Aprender() {
   const navigate = useNavigate();
+  const triggeredRef = useRef(false);
+
+  useEffect(() => {
+    let leadId: string | null = null;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl = params.get("lead_id");
+      if (fromUrl) localStorage.setItem("velora_lead_id", fromUrl);
+      leadId = fromUrl || localStorage.getItem("velora_lead_id");
+    } catch { /* ignore */ }
+
+    if (!leadId) return;
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      if (cancelled || triggeredRef.current) return;
+      triggeredRef.current = true;
+      trackCursoVisit(leadId!);
+    }, VISIT_DELAY_MS);
+
+    // Cancel if user clicks the buy CTA before the timer fires
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[data-cta="buy"]')) {
+        cancelled = true;
+        window.clearTimeout(timer);
+      }
+    };
+    document.addEventListener("click", onClick, true);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      document.removeEventListener("click", onClick, true);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
