@@ -201,6 +201,7 @@ export type Database = {
           id: string
           name: string
           source: string | null
+          track: string | null
           whatsapp: string | null
         }
         Insert: {
@@ -209,6 +210,7 @@ export type Database = {
           id?: string
           name: string
           source?: string | null
+          track?: string | null
           whatsapp?: string | null
         }
         Update: {
@@ -217,6 +219,7 @@ export type Database = {
           id?: string
           name?: string
           source?: string | null
+          track?: string | null
           whatsapp?: string | null
         }
         Relationships: []
