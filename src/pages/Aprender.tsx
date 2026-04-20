@@ -80,12 +80,20 @@ const Aprender = () => {
           >
             VELORA
           </button>
-          <button
-            onClick={() => navigate("/curso")}
-            className="velora-btn-ghost"
-          >
-            Conhecer o curso
-          </button>
+          <div className="flex items-center gap-3 md:gap-5">
+            <button
+              onClick={() => navigate("/pack")}
+              className="text-xs md:text-sm text-primary/80 hover:text-primary font-body tracking-wider uppercase transition-colors"
+            >
+              Pack
+            </button>
+            <button
+              onClick={() => navigate("/curso")}
+              className="velora-btn-ghost"
+            >
+              Conhecer o curso
+            </button>
+          </div>
         </div>
       </nav>
 
