@@ -66,6 +66,7 @@ export default function EmailsTab({ password }: { password: string }) {
   const [leads, setLeads] = useState<LeadItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [tempFilter, setTempFilter] = useState<"all" | Temperature>("all");
 
   const fetchData = async () => {
     setLoading(true);
