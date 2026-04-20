@@ -100,6 +100,12 @@ const buildHtml = (name: string, leadId: string) => `<!doctype html>
               Com intenção,<br/>Estúdio Velora<br/>Direção criativa com inteligência artificial
             </p>
           </td></tr>
+      <tr><td style="padding:0 24px 32px 24px;text-align:center;">
+        <p style="font-family:Raleway,Arial,sans-serif;font-size:11px;color:#999999;margin:0;">
+          <a href="https://estudiovelora.lovable.app/email-preferences/unsubscribe?id=${leadId}" style="color:#C9A96E;text-decoration:none;">Cancelar inscrição</a>
+        </p>
+      </td></tr>
+
 
         </table>
       </td></tr>
@@ -114,6 +120,7 @@ serve(async (req) => {
     const name = String(body.name || "").trim().slice(0, 100);
     const email = String(body.email || "").trim().toLowerCase().slice(0, 255);
     const idempotencyKey = String(body.idempotency_key || "").trim().slice(0, 120);
+    const leadId = String(body.lead_id || "").trim().slice(0, 64);
     const leadId = String(body.lead_id || "").trim().slice(0, 64);
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return new Response(JSON.stringify({ error: "Invalid email" }), {
