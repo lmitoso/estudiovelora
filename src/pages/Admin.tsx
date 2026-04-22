@@ -438,7 +438,7 @@ export default function Admin() {
                     <div key={order.id} className="bg-card border border-border rounded-lg overflow-hidden">
                       <div
                         className="p-3 cursor-pointer active:bg-muted/20"
-                        onClick={() => fetchGenerations(order.id)}
+                        onClick={() => toggleExpand(order.id)}
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <div className="min-w-0">
@@ -482,30 +482,17 @@ export default function Admin() {
                             <p><span className="text-muted-foreground">Campanha:</span> {order.campaign_goal || "—"}</p>
                             <p><span className="text-muted-foreground">Peça:</span> {order.piece_description || "—"}</p>
                           </div>
-                          {order.status === "generation_failed" && (
-                            <Button variant="outline" size="sm" className="text-xs w-full" disabled={retrying === order.id} onClick={() => handleRetry(order.id)}>
-                              <RefreshCw className={`h-3 w-3 mr-1 ${retrying === order.id ? "animate-spin" : ""}`} />
-                              Retry
+                          {order.status === "paid" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs w-full"
+                              disabled={markingDelivered === order.id}
+                              onClick={() => handleMarkDelivered(order.id)}
+                            >
+                              <CheckCircle2 className={`h-3 w-3 mr-1 ${markingDelivered === order.id ? "animate-pulse" : ""}`} />
+                              {markingDelivered === order.id ? "Marcando..." : "Marcar como entregue"}
                             </Button>
-                          )}
-                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Gerações</p>
-                          {generations[order.id]?.length ? (
-                            <div className="space-y-2">
-                              {generations[order.id].map((g) => (
-                                <div key={g.id} className="flex items-center gap-2 bg-background border border-border rounded-md p-2.5 text-xs flex-wrap">
-                                  <Badge className={`text-[10px] ${statusColors[g.status] || ""}`}>{g.status}</Badge>
-                                  <span className="capitalize text-muted-foreground">{g.type}</span>
-                                  {g.output_url && (
-                                    <a href={g.output_url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-[10px]">Ver</a>
-                                  )}
-                                  {g.error_message && (
-                                    <span className="text-destructive text-[10px] break-all">{g.error_message}</span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-muted-foreground">Nenhuma geração encontrada.</p>
                           )}
                         </div>
                       )}
@@ -526,13 +513,13 @@ export default function Admin() {
                         <th className="text-left text-xs font-medium text-muted-foreground px-3 py-3 hidden lg:table-cell">Qtd</th>
                         <th className="text-left text-xs font-medium text-muted-foreground px-3 py-3">Valor</th>
                         <th className="text-left text-xs font-medium text-muted-foreground px-3 py-3">Status</th>
-                        <th className="w-20 px-3 py-3"></th>
+                        <th className="w-32 px-3 py-3"></th>
                       </tr>
                     </thead>
                     <tbody>
                       {filtered.map((order) => (
                         <>
-                          <tr key={order.id} className="border-b border-border last:border-0 cursor-pointer hover:bg-muted/30" onClick={() => fetchGenerations(order.id)}>
+                          <tr key={order.id} className="border-b border-border last:border-0 cursor-pointer hover:bg-muted/30" onClick={() => toggleExpand(order.id)}>
                             <td className="px-3 py-3">
                               {expandedOrder === order.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                             </td>
@@ -550,10 +537,16 @@ export default function Admin() {
                               <Badge className={`text-[10px] ${statusColors[order.status] || ""}`}>{order.status.replace("_", " ")}</Badge>
                             </td>
                             <td className="px-3 py-3">
-                              {order.status === "generation_failed" && (
-                                <Button variant="outline" size="sm" className="text-xs" disabled={retrying === order.id} onClick={(e) => { e.stopPropagation(); handleRetry(order.id); }}>
-                                  <RefreshCw className={`h-3 w-3 mr-1 ${retrying === order.id ? "animate-spin" : ""}`} />
-                                  Retry
+                              {order.status === "paid" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs"
+                                  disabled={markingDelivered === order.id}
+                                  onClick={(e) => { e.stopPropagation(); handleMarkDelivered(order.id); }}
+                                >
+                                  <CheckCircle2 className={`h-3 w-3 mr-1 ${markingDelivered === order.id ? "animate-pulse" : ""}`} />
+                                  Entregar
                                 </Button>
                               )}
                             </td>
@@ -561,32 +554,13 @@ export default function Admin() {
                           {expandedOrder === order.id && (
                             <tr key={`${order.id}-detail`}>
                               <td colSpan={10} className="bg-card/50 p-4">
-                                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                                <div className="grid md:grid-cols-2 gap-4">
                                   <div className="space-y-1 text-sm">
                                     <p><span className="text-muted-foreground">Descrição da marca:</span> {order.brand_description || "—"}</p>
                                     <p><span className="text-muted-foreground">Objetivo da campanha:</span> {order.campaign_goal || "—"}</p>
                                     <p><span className="text-muted-foreground">Descrição da peça:</span> {order.piece_description || "—"}</p>
                                   </div>
                                 </div>
-                                <p className="text-xs text-muted-foreground mb-2 font-semibold uppercase tracking-wider">Gerações</p>
-                                {generations[order.id]?.length ? (
-                                  <div className="space-y-2">
-                                    {generations[order.id].map((g) => (
-                                      <div key={g.id} className="flex items-center gap-3 bg-background border border-border rounded-md p-3 text-sm">
-                                        <Badge className={`text-[10px] ${statusColors[g.status] || ""}`}>{g.status}</Badge>
-                                        <span className="capitalize text-muted-foreground">{g.type}</span>
-                                        {g.output_url && (
-                                          <a href={g.output_url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-xs">Ver resultado</a>
-                                        )}
-                                        {g.error_message && (
-                                          <span className="text-destructive text-xs truncate max-w-xs">{g.error_message}</span>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p className="text-xs text-muted-foreground">Nenhuma geração encontrada.</p>
-                                )}
                               </td>
                             </tr>
                           )}
