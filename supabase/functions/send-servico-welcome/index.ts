@@ -129,7 +129,6 @@ serve(async (req) => {
     const email = String(body.email || "").trim().toLowerCase().slice(0, 255);
     const idempotencyKey = String(body.idempotency_key || "").trim().slice(0, 120);
     const leadId = String(body.lead_id || "").trim().slice(0, 64);
-    const leadId = String(body.lead_id || "").trim().slice(0, 64);
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return new Response(JSON.stringify({ error: "Invalid email" }), {
