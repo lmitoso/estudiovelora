@@ -10,7 +10,7 @@ const RESEND_API_URL = "https://api.resend.com";
 const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "contato@estudiovelora.net";
 const FROM_NAME = Deno.env.get("RESEND_FROM_NAME") || "Estúdio Velora";
 const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
-const STUDIO_URL = "https://estudiovelora.lovable.app";
+const STUDIO_URL = "https://wa.me/5598991722040?text=Oi%2C+quero+ver+como+ficaria+uma+campanha+para+minha+marca";
 
 const divider = `
               <tr>

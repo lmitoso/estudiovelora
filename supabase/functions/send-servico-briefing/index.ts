@@ -10,8 +10,8 @@ const RESEND_API_URL = "https://api.resend.com";
 const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "contato@estudiovelora.net";
 const FROM_NAME = Deno.env.get("RESEND_FROM_NAME") || "Estúdio Velora";
 const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
-const ESSENCIAL_URL = "https://wa.me/5598991722040?text=Ol%C3%A1%2C%20quero%20o%20Pacote%20Essencial%20por%20R%24%2097";
-const STUDIO_URL = "https://wa.me/5598991722040?text=Ol%C3%A1%2C%20quero%20conversar%20com%20o%20est%C3%BAdio";
+const ESSENCIAL_URL = "https://wa.me/5598991722040?text=Oi%2C+quero+fazer+um+briefing+com+a+Velora";
+const STUDIO_URL = "https://wa.me/5598991722040?text=Oi%2C+quero+fazer+um+briefing+com+a+Velora";
 
 const divider = `
               <tr>
