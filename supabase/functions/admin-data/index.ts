@@ -40,6 +40,22 @@ serve(async (req) => {
       });
     }
 
+    if (action === "mark_delivered" && orderId) {
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          status: "delivered",
+          delivered_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", orderId);
+      if (error) throw new Error(error.message);
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "generations" && orderId) {
       const { data, error } = await supabase
         .from("generations")
