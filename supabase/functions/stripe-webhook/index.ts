@@ -103,31 +103,13 @@ serve(async (req) => {
         });
       }
 
-      // Update order to paid
+      // Update order to paid — delivery is now manual by the team
       await supabase
         .from("orders")
         .update({ status: "paid", updated_at: new Date().toISOString() })
         .eq("id", orderId);
 
-      console.log(`Order ${orderId} marked as paid. Triggering generation...`);
-
-      // Trigger content generation
-      const generateUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-content`;
-      const generateResponse = await fetch(generateUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-        },
-        body: JSON.stringify({ orderId }),
-      });
-
-      if (!generateResponse.ok) {
-        const errText = await generateResponse.text();
-        console.error(`Generation trigger failed: ${errText}`);
-      } else {
-        console.log(`Generation triggered successfully for order ${orderId}`);
-      }
+      console.log(`Order ${orderId} marked as paid. Manual delivery flow.`);
     }
 
     return new Response(JSON.stringify({ received: true }), {

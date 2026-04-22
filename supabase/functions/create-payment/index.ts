@@ -9,21 +9,17 @@ const corsHeaders = {
 };
 
 // Server-side pricing constants (source of truth)
-const PHOTO_PRICE = 27;
-const VIDEO_PRICE = 37;
+const PHOTO_PRICE = 29.90;
+const VIDEO_PRICE = 49.90;
 const COMBOS = [
-  { photos: 3, videos: 0, price: 67 },
-  { photos: 5, videos: 1, price: 129 },
-  { photos: 10, videos: 2, price: 219 },
+  { photos: 3, videos: 0, price: 97 },   // Essencial
+  { photos: 5, videos: 2, price: 247 },  // Impacto
+  { photos: 10, videos: 5, price: 497 }, // Campanha Completa
 ];
-const MAX_DISCOUNT = 0.2; // 20% flash discount
 
 function calculateServerPrice(photosQty: number, videosQty: number): number {
-  // Check if it matches a combo
   const combo = COMBOS.find(c => c.photos === photosQty && c.videos === videosQty);
   if (combo) return combo.price;
-
-  // Custom pricing
   return photosQty * PHOTO_PRICE + videosQty * VIDEO_PRICE;
 }
 
@@ -39,7 +35,6 @@ serve(async (req) => {
       throw new Error("Missing required fields: orderId, amount, customerEmail");
     }
 
-    // Fetch order from database to validate
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -56,23 +51,20 @@ serve(async (req) => {
     }
 
     // Calculate the correct price server-side
-    const basePrice = calculateServerPrice(order.photos_qty, order.videos_qty);
-    const minAllowedPrice = Math.round(basePrice * (1 - MAX_DISCOUNT));
-
-    // Validate: client amount must be between discounted price and full price
+    const expectedPrice = calculateServerPrice(order.photos_qty, order.videos_qty);
     const clientAmount = Number(amount);
-    if (clientAmount < minAllowedPrice || clientAmount > basePrice) {
+
+    // Validate: client amount must match the server-calculated price (small float tolerance)
+    if (Math.abs(clientAmount - expectedPrice) > 0.01) {
       console.error(
-        `Price mismatch! Client sent R$${clientAmount}, server expects R$${minAllowedPrice}-R$${basePrice} for ${order.photos_qty} photos + ${order.videos_qty} videos`
+        `Price mismatch! Client sent R$${clientAmount}, server expects R$${expectedPrice} for ${order.photos_qty} photos + ${order.videos_qty} videos`
       );
       throw new Error("Invalid price. Please refresh and try again.");
     }
 
-    // Use the validated amount (which may include the flash discount)
-    const validatedAmount = clientAmount;
+    const validatedAmount = expectedPrice;
 
-    // Update order with validated price in case of mismatch
-    if (order.total_price !== validatedAmount) {
+    if (Number(order.total_price) !== validatedAmount) {
       await supabaseAdmin
         .from("orders")
         .update({ total_price: validatedAmount })
@@ -83,7 +75,6 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Check for existing customer
     const customers = await stripe.customers.list({ email: customerEmail, limit: 1 });
     let customerId: string | undefined;
     if (customers.data.length > 0) {
