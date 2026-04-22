@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut, Download, Users, MessageSquare, Phone, Mail, Calendar, ShoppingBag, DollarSign, Send } from "lucide-react";
+import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut, Download, Users, MessageSquare, Phone, Mail, Calendar, ShoppingBag, Send, CheckCircle2 } from "lucide-react";
 import ConversationsTab from "@/components/admin/ConversationsTab";
 import EmailsTab from "@/components/admin/EmailsTab";
 import { useNavigate } from "react-router-dom";
@@ -27,16 +27,6 @@ type Order = {
   status: string;
 };
 
-type Generation = {
-  id: string;
-  type: string;
-  status: string;
-  output_url: string | null;
-  error_message: string | null;
-  created_at: string;
-  completed_at: string | null;
-};
-
 type Lead = {
   id: string;
   name: string;
@@ -49,15 +39,13 @@ type Lead = {
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
   paid: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  processing: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+  delivered: "bg-green-500/20 text-green-400 border-green-500/30",
   completed: "bg-green-500/20 text-green-400 border-green-500/30",
-  generation_failed: "bg-destructive/20 text-destructive border-destructive/30",
   failed: "bg-destructive/20 text-destructive border-destructive/30",
-  queued: "bg-muted text-muted-foreground border-border",
   lead: "bg-primary/20 text-primary border-primary/30",
 };
 
-const STATUS_FILTERS = ["todos", "pending", "paid", "processing", "completed", "generation_failed", "lead"];
+const STATUS_FILTERS = ["todos", "pending", "paid", "delivered"];
 
 export default function Admin() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -67,8 +55,7 @@ export default function Admin() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
-  const [generations, setGenerations] = useState<Record<string, Generation[]>>({});
-  const [retrying, setRetrying] = useState<string | null>(null);
+  const [markingDelivered, setMarkingDelivered] = useState<string | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
@@ -165,40 +152,23 @@ export default function Admin() {
     return () => { supabase.removeChannel(channel); };
   }, [authenticated]);
 
-  const fetchGenerations = async (orderId: string) => {
-    if (generations[orderId]) {
-      setExpandedOrder(expandedOrder === orderId ? null : orderId);
-      return;
-    }
-    try {
-      const res = await supabase.functions.invoke("admin-data", {
-        body: { adminPassword: password, action: "generations", orderId },
-      });
-      if (res.error) throw res.error;
-      setGenerations((prev) => ({ ...prev, [orderId]: res.data?.data || [] }));
-      setExpandedOrder(orderId);
-    } catch (err: any) {
-      toast({ title: "Erro ao carregar gerações", description: err.message, variant: "destructive" });
-    }
+  const toggleExpand = (orderId: string) => {
+    setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
 
-  const handleRetry = async (orderId: string) => {
-    setRetrying(orderId);
+  const handleMarkDelivered = async (orderId: string) => {
+    setMarkingDelivered(orderId);
     try {
-      const res = await supabase.functions.invoke("retry-generations", {
-        body: { orderId, adminPassword: password },
+      const res = await supabase.functions.invoke("admin-data", {
+        body: { adminPassword: password, action: "mark_delivered", orderId },
       });
       if (res.error) throw res.error;
-      toast({ title: "Retry iniciado", description: `Pedido ${orderId.slice(0, 8)}... em reprocessamento.` });
-      const genRes = await supabase.functions.invoke("admin-data", {
-        body: { adminPassword: password, action: "generations", orderId },
-      });
-      setGenerations((prev) => ({ ...prev, [orderId]: genRes.data?.data || [] }));
+      toast({ title: "Pedido marcado como entregue" });
       fetchOrders();
     } catch (err: any) {
-      toast({ title: "Erro no retry", description: err.message || "Erro desconhecido", variant: "destructive" });
+      toast({ title: "Erro ao marcar entrega", description: err.message || "Erro desconhecido", variant: "destructive" });
     } finally {
-      setRetrying(null);
+      setMarkingDelivered(null);
     }
   };
 
@@ -232,9 +202,9 @@ export default function Admin() {
   const metrics = useMemo(() => {
     const total = orders.length;
     const paid = orders.filter((o) => o.status !== "pending").length;
-    const failed = orders.filter((o) => o.status === "generation_failed").length;
+    const delivered = orders.filter((o) => o.status === "delivered").length;
     const revenue = orders.filter((o) => o.status !== "pending").reduce((s, o) => s + Number(o.total_price), 0);
-    return { total, paid, failed, revenue, customers: customers.length, leads: leads.length };
+    return { total, paid, delivered, revenue, customers: customers.length, leads: leads.length };
   }, [orders, customers, leads]);
 
   const exportCSV = (type: "pedidos" | "clientes" | "leads") => {
@@ -322,7 +292,7 @@ export default function Admin() {
             { label: "Leads", value: metrics.leads },
             { label: "Pedidos", value: metrics.total },
             { label: "Pagos", value: metrics.paid },
-            { label: "Falhados", value: metrics.failed },
+            { label: "Entregues", value: metrics.delivered },
             { label: "Receita", value: `R$ ${metrics.revenue.toFixed(0)}` },
             { label: "Clientes", value: metrics.customers },
           ].map((m) => (
