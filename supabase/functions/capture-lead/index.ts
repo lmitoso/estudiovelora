@@ -73,6 +73,23 @@ serve(async (req) => {
         console.error("Failed to send welcome email:", emailError);
       }
 
+      // Disparar WhatsApp de boas-vindas Track B (fire and forget)
+      if (whatsapp) {
+        try {
+          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+          fetch(`${supabaseUrl}/functions/v1/welcome-lead-aprender`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!}`,
+            },
+            body: JSON.stringify({ name, whatsapp }),
+          }).catch((err) => console.error("welcome-lead-aprender fire-and-forget error:", err));
+        } catch (waError) {
+          console.error("Failed to trigger welcome-lead-aprender:", waError);
+        }
+      }
+
       // Agendar sequência completa de emails (dia 1, 3, 6, 10)
       try {
         const now = Date.now();
