@@ -44,7 +44,6 @@ serve(async (req) => {
     if (existingConv) {
       conversationId = existingConv.id;
     } else {
-      // Create conversation (trigger will auto-link to lead)
       const { data: newConv, error: convErr } = await supabase
         .from("conversations")
         .insert({
@@ -61,8 +60,8 @@ serve(async (req) => {
 
     const firstName = name.split(" ")[0];
 
-    // Send welcome via WhatsApp using approved template
-    const WELCOME_TEMPLATE_SID = "HX77640c325e6f84787803d36338a3858b";
+    // Send welcome via WhatsApp using approved template velora_aprender_welcome
+    const WELCOME_TEMPLATE_SID = "HX1a6071dec0289c06624b984512ab98ed";
 
     const sendResponse = await fetch(
       `${Deno.env.get("SUPABASE_URL")}/functions/v1/whatsapp-send`,
@@ -84,8 +83,8 @@ serve(async (req) => {
 
     const sendData = await sendResponse.json();
 
-    return new Response(JSON.stringify({ 
-      success: true, 
+    return new Response(JSON.stringify({
+      success: true,
       conversationId,
       messageSent: sendData.success || false,
     }), {
@@ -93,7 +92,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("welcome-lead error:", error);
+    console.error("welcome-lead-aprender error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
