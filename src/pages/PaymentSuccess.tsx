@@ -36,18 +36,16 @@ const PaymentSuccess = () => {
         // Get order email + amount for success page and pixel
         const { data: order } = await supabase
           .from("orders")
-          .select("email, total_amount")
+          .select("email, total_price")
           .eq("id", orderId)
           .single();
 
         if (order?.email) setEmail(order.email);
 
         // Meta Pixel — Purchase
-        // total_amount stored in cents (Stripe convention) → convert to BRL
-        const rawAmount = (order as { total_amount?: number } | null)?.total_amount;
-        const valueBRL = typeof rawAmount === "number" ? rawAmount / 100 : undefined;
+        const valueBRL = typeof order?.total_price === "number" ? order.total_price : 0;
         fbqTrack("Purchase", {
-          value: valueBRL ?? 0,
+          value: valueBRL,
           currency: "BRL",
           order_id: orderId,
         });
