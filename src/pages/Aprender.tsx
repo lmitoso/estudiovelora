@@ -11,6 +11,11 @@ const Aprender = () => {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Meta Pixel — ViewContent on /aprender mount
+  useEffect(() => {
+    fbqTrack("ViewContent", { content_name: "aprender" });
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
