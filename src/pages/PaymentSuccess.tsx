@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { fbqTrack } from "@/lib/metaPixel";
 import StepGenerating from "@/components/velora/StepGenerating";
 import SuccessPage from "@/components/velora/SuccessPage";
 
@@ -32,14 +33,23 @@ const PaymentSuccess = () => {
           return;
         }
 
-        // Get order email for success page
+        // Get order email + amount for success page and pixel
         const { data: order } = await supabase
           .from("orders")
-          .select("email")
+          .select("email, total_price")
           .eq("id", orderId)
           .single();
 
         if (order?.email) setEmail(order.email);
+
+        // Meta Pixel — Purchase
+        const valueBRL = typeof order?.total_price === "number" ? order.total_price : 0;
+        fbqTrack("Purchase", {
+          value: valueBRL,
+          currency: "BRL",
+          order_id: orderId,
+        });
+
         setStatus("generating");
       } catch (err) {
         console.error("Verification error:", err);

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { fbqTrack } from "@/lib/metaPixel";
 import heroImg from "@/assets/hero-velora.jpg";
 import { CheckCircle2, ArrowRight, BookOpen, MessageCircle } from "lucide-react";
 
@@ -65,6 +66,9 @@ const Index = () => {
         },
         body: JSON.stringify({ name: form.name.trim(), whatsapp: form.whatsapp.trim() }),
       }).catch((err) => console.error("welcome-lead error:", err));
+
+      // Meta Pixel — Lead (serviço)
+      fbqTrack("Lead", { content_name: "servico", value: 97, currency: "BRL" });
 
       setSubmitted(true);
     } catch (err: any) {

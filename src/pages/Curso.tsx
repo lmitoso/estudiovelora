@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Flame, GraduationCap, Bot, Camera, Clapperboard, Package, Rocket, BookOpen, Check, Star, Shield, MessageCircle } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { fbqTrack } from "@/lib/metaPixel";
 
 const PAYMENT_URL = "https://pay.kiwify.com.br/G0oqvsb";
 const WHATSAPP_URL = "https://wa.me/5598991722040?text=Ol%C3%A1%2C%20quero%20saber%20mais%20sobre%20o%20M%C3%A9todo%20Velora";
@@ -109,6 +110,11 @@ const faqItems = [
 export default function Aprender() {
   const navigate = useNavigate();
   const triggeredRef = useRef(false);
+
+  // Meta Pixel — ViewContent on /curso mount
+  useEffect(() => {
+    fbqTrack("ViewContent", { content_name: "curso", value: 497, currency: "BRL" });
+  }, []);
 
   useEffect(() => {
     let leadId: string | null = null;

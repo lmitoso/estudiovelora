@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { fbqTrack } from "@/lib/metaPixel";
 import { CheckCircle2, Sparkles, Layers, Target, ArrowRight } from "lucide-react";
 
 const Aprender = () => {
@@ -9,6 +10,11 @@ const Aprender = () => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Meta Pixel — ViewContent on /aprender mount
+  useEffect(() => {
+    fbqTrack("ViewContent", { content_name: "aprender" });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +56,9 @@ const Aprender = () => {
       if (leadId) {
         try { localStorage.setItem("velora_lead_id", leadId); } catch { /* ignore */ }
       }
+
+      // Meta Pixel — Lead (aprender)
+      fbqTrack("Lead", { content_name: "aprender", value: 37, currency: "BRL" });
 
       setSubmitted(true);
       setTimeout(() => {
