@@ -18,7 +18,7 @@
   <meta property="og:description" content="Crie fotos editoriais profissionais para sua marca com inteligência artificial. Pronto em até 24h.">
   <meta name="twitter:description" content="Crie fotos editoriais profissionais para sua marca com inteligência artificial. Pronto em até 24h.">
 
-  <!-- Meta Pixel Code -->
+  <!-- Meta Pixel base loader (init + PageView are dispatched from src/main.tsx using VITE_META_PIXEL_ID) -->
   <script>
   !function(f,b,e,v,n,t,s)
   {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -28,15 +28,10 @@
   t.src=v;s=b.getElementsByTagName(e)[0];
   s.parentNode.insertBefore(t,s)}(window, document,'script',
   'https://connect.facebook.net/en_US/fbevents.js');
-  fbq('init', '1385087536987067');
-  fbq('track', 'PageView');
   </script>
-  <!-- End Meta Pixel Code -->
 </head>
 
   <body>
-    <!-- Meta Pixel noscript fallback -->
-    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1385087536987067&ev=PageView&noscript=1"/></noscript>
 
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
