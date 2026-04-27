@@ -57,6 +57,9 @@ const Aprender = () => {
         try { localStorage.setItem("velora_lead_id", leadId); } catch { /* ignore */ }
       }
 
+      // Meta Pixel — Lead (aprender)
+      fbqTrack("Lead", { content_name: "aprender", value: 37, currency: "BRL" });
+
       setSubmitted(true);
       setTimeout(() => {
         navigate(leadId ? `/curso?lead_id=${leadId}` : "/curso");
