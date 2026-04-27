@@ -111,6 +111,11 @@ export default function Aprender() {
   const navigate = useNavigate();
   const triggeredRef = useRef(false);
 
+  // Meta Pixel — ViewContent on /curso mount
+  useEffect(() => {
+    fbqTrack("ViewContent", { content_name: "curso", value: 497, currency: "BRL" });
+  }, []);
+
   useEffect(() => {
     let leadId: string | null = null;
     try {

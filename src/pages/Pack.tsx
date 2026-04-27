@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Check, ArrowRight } from "lucide-react";
+import { fbqTrack } from "@/lib/metaPixel";
 
 const PACK_URL = "https://pay.kiwify.com.br/SLgYyHP";
 const COURSE_URL = "https://pay.kiwify.com.br/G0oqvsb";
@@ -14,6 +16,11 @@ const bullets = [
 
 const Pack = () => {
   const navigate = useNavigate();
+
+  // Meta Pixel — ViewContent on /pack mount
+  useEffect(() => {
+    fbqTrack("ViewContent", { content_name: "pack", value: 37, currency: "BRL" });
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
