@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { fbqTrack } from "@/lib/metaPixel";
 import { CheckCircle2, Sparkles, Layers, Target, ArrowRight } from "lucide-react";
 
 const Aprender = () => {
