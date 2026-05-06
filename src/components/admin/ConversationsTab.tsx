@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
-import { MessageSquare, ChevronLeft, RefreshCw, Phone, User, Clock } from "lucide-react";
+import { MessageSquare, ChevronLeft, RefreshCw, Phone, User, Clock, Download, Send, AlertTriangle } from "lucide-react";
+import { downloadCsv } from "@/lib/exportCsv";
 
 type Conversation = {
   id: string;
