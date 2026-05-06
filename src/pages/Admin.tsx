@@ -1,31 +1,16 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { RefreshCw, Search, ChevronDown, ChevronUp, ArrowLeft, Lock, LogOut, Download, Users, MessageSquare, Phone, Mail, Calendar, ShoppingBag, Send, CheckCircle2 } from "lucide-react";
+import { RefreshCw, ArrowLeft, Lock, LogOut, Download, Users, MessageSquare, Phone, Mail, Calendar, Send } from "lucide-react";
 import ConversationsTab from "@/components/admin/ConversationsTab";
 import EmailsTab from "@/components/admin/EmailsTab";
 import { useNavigate } from "react-router-dom";
-
-type Order = {
-  id: string;
-  created_at: string;
-  customer_name: string | null;
-  email: string;
-  whatsapp: string | null;
-  brand_name: string;
-  brand_description: string | null;
-  campaign_goal: string | null;
-  piece_description: string | null;
-  model_type: string;
-  photos_qty: number;
-  videos_qty: number;
-  total_price: number;
-  status: string;
-};
+import { downloadCsv } from "@/lib/exportCsv";
+import { ensureNotificationPermission } from "@/lib/notifications";
 
 type Lead = {
   id: string;
@@ -35,17 +20,6 @@ type Lead = {
   source: string | null;
   created_at: string;
 };
-
-const statusColors: Record<string, string> = {
-  pending: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-  paid: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  delivered: "bg-green-500/20 text-green-400 border-green-500/30",
-  completed: "bg-green-500/20 text-green-400 border-green-500/30",
-  failed: "bg-destructive/20 text-destructive border-destructive/30",
-  lead: "bg-primary/20 text-primary border-primary/30",
-};
-
-const STATUS_FILTERS = ["todos", "pending", "paid", "delivered"];
 
 export default function Admin() {
   const [orders, setOrders] = useState<Order[]>([]);
