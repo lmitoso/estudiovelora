@@ -1,63 +1,63 @@
+## Situação atual
 
+A Luna (sales-agent) hoje só tem links prontos para os **produtos educacionais via Kiwify**:
 
-# Correções Necessárias
+- Pack Editorial — R$ 37 → `https://pay.kiwify.com.br/SLgYyHP`
+- Curso Completo — R$ 497 → `https://pay.kiwify.com.br/G0oqvsb`
 
-## Problema 1: Mensagens não chegam no WhatsApp
-O sistema enviou as mensagens com sucesso (Twilio retornou SID), mas como estamos no **Twilio Sandbox**, o destinatário precisa ter feito opt-in antes (enviar "join ..." para o número do sandbox). Sem isso, a mensagem é aceita pela API mas não entregue.
+Para os **serviços** (Essencial R$ 97, Impacto R$ 247, Campanha Completa R$ 497, fotos/vídeos avulsos), ela **não envia link nenhum** — só fala "posso gerar o link de pagamento" e o fluxo trava. Hoje o site gera pagamento via `create-payment` (Stripe Checkout), mas isso exige passar por todo o funil do site (`/`).
 
-**Solução**: Não é um bug de código. Opções:
-- Para testes: a pessoa precisa enviar a mensagem de adesão ao sandbox antes
-- Para produção: migrar para um número Twilio com WhatsApp Business aprovado (não requer opt-in prévio)
+## O que vamos fazer
 
-## Problema 2: Lead não vincula à conversa automaticamente
-Os leads do Gilbert e Juliana têm `lead_id: null` na conversa. O trigger `link_conversation_to_lead` compara o `whatsapp_number` da conversa (normalizado com `+55`, ex: `+5537991826936`) com o campo `whatsapp` do lead (salvo sem prefixo, ex: `37991826936`).
+Dar à Luna a capacidade de enviar link Stripe correto para qualquer combinação de serviço, sem ela depender do site.
 
-O trigger atual faz:
+### 1. Criar Payment Links fixos no Stripe para os 3 pacotes
+
+Usar Stripe Payment Links (URLs permanentes, sem precisar criar sessão a cada venda). Vou criar via tool `stripe`:
+
+- Pacote Essencial — R$ 97 (3 fotos)
+- Pacote Impacto — R$ 247 (5 fotos + 2 vídeos)
+- Pacote Campanha Completa — R$ 497 (10 fotos + 5 vídeos)
+
+Resultado: 3 URLs estáveis (`https://buy.stripe.com/...`) que a Luna manda direto no WhatsApp.
+
+### 2. Criar edge function `create-custom-payment-link` para orçamentos fora dos pacotes
+
+Quando o cliente quiser combinação custom (ex: 4 fotos + 1 vídeo, ou 20 fotos), a Luna chama essa função via tool-calling e recebe um link Stripe gerado na hora.
+
+- Input: `photos_qty`, `videos_qty`, `customer_email`, `customer_name`, `whatsapp`
+- Lógica: aplica preço de combo se bater com pacote, senão calcula avulso (29,90/foto + 49,90/vídeo) — mesma regra de `create-payment`
+- Cria `order` no banco com status `pending` e gera Stripe Checkout Session
+- Retorna `url` para a Luna mandar
+
+### 3. Atualizar o prompt da Luna em `sales-agent/index.ts`
+
+Adicionar na seção "O QUE A VELORA OFERECE":
+
 ```
-stripped_number = remove o "+" → "5537991826936"
-WHERE whatsapp = "+5537991826936" OR whatsapp = "5537991826936"
-```
-Mas o lead tem `whatsapp = "37991826936"` (sem o 55). A comparação falha.
+LINKS DE PAGAMENTO — SERVIÇOS (Stripe):
+- Essencial R$ 97 → [link gerado]
+- Impacto R$ 247 → [link gerado]
+- Campanha Completa R$ 497 → [link gerado]
 
-**Solução**: Atualizar o trigger `link_conversation_to_lead` para normalizar o número do lead da mesma forma — extrair apenas dígitos e comparar com/sem o prefixo 55.
-
-### Arquivo: Migration SQL
-Recriar a função `link_conversation_to_lead` com normalização robusta:
-- Extrair apenas dígitos de ambos os lados
-- Comparar sem prefixo de país (últimos 10-11 dígitos)
-- Isso cobre todos os formatos: `37991826936`, `+5537991826936`, `5537991826936`
-
-### Detalhes técnicos
-```sql
-CREATE OR REPLACE FUNCTION public.link_conversation_to_lead()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-DECLARE
-  found_lead_id uuid;
-  conv_digits text;
-BEGIN
-  -- Extract only digits from conversation number
-  conv_digits := regexp_replace(NEW.whatsapp_number, '[^0-9]', '', 'g');
-  -- Remove country code 55 if present
-  IF left(conv_digits, 2) = '55' AND length(conv_digits) > 11 THEN
-    conv_digits := substring(conv_digits from 3);
-  END IF;
-
-  SELECT id INTO found_lead_id FROM leads
-  WHERE regexp_replace(whatsapp, '[^0-9]', '', 'g') = conv_digits
-     OR regexp_replace(
-          regexp_replace(whatsapp, '[^0-9]', '', 'g'),
-          '^55', ''
-        ) = conv_digits
-  LIMIT 1;
-
-  IF found_lead_id IS NOT NULL THEN
-    NEW.lead_id := found_lead_id;
-  END IF;
-  RETURN NEW;
-END;
-$$;
+Para combinações customizadas (qualquer outra qty de foto/vídeo):
+chame a tool generate_custom_payment_link com photos_qty, videos_qty,
+customer_email e customer_name. A função retorna a URL para você enviar.
 ```
 
-Também corrigir retroativamente os 2 leads existentes que não foram vinculados.
+E adicionar tool-calling no payload do LLM (já usa Lovable AI Gateway, suporta tools) para `generate_custom_payment_link`.
 
+### 4. Resposta direta à sua pergunta — o que a Luna **já consegue passar hoje**
+
+Apenas estes dois links (educacionais Kiwify):
+- Pack Editorial R$ 37: `https://pay.kiwify.com.br/SLgYyHP`
+- Curso Velora R$ 497: `https://pay.kiwify.com.br/G0oqvsb`
+
+**Nenhum link de serviço.** É exatamente isso que o plano resolve.
+
+## Arquivos
+
+- **Novo:** `supabase/functions/create-custom-payment-link/index.ts`
+- **Editar:** `supabase/functions/sales-agent/index.ts` (adicionar links + tool-calling)
+- **Editar:** `supabase/config.toml` (registrar nova função com `verify_jwt = false`)
+- **Stripe (via tool):** criar 3 produtos + payment links
