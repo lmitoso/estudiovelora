@@ -76,3 +76,6 @@ verify_jwt = false
 
 [functions.create-custom-payment-link]
 verify_jwt = false
+
+[functions.whoami-stripe]
+verify_jwt = false
