@@ -324,7 +324,11 @@ export default function ConversationsTab({ password }: { password: string }) {
   // Conversation list view
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={exportAllConversationsCsv} disabled={loading || conversations.length === 0}>
+          <Download className="h-4 w-4 mr-2" />
+          Exportar CSV
+        </Button>
         <Button variant="outline" size="sm" onClick={fetchConversations} disabled={loading}>
           <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Atualizar
