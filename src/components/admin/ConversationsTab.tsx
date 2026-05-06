@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
-import { MessageSquare, ChevronLeft, RefreshCw, Phone, User, Clock } from "lucide-react";
+import { MessageSquare, ChevronLeft, RefreshCw, Phone, User, Clock, Download, Send, AlertTriangle } from "lucide-react";
+import { downloadCsv } from "@/lib/exportCsv";
 
 type Conversation = {
   id: string;
@@ -67,6 +69,8 @@ export default function ConversationsTab({ password }: { password: string }) {
   const [selectedConv, setSelectedConv] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [messagesLoading, setMessagesLoading] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const fetchConversations = async () => {
@@ -145,11 +149,79 @@ export default function ConversationsTab({ password }: { password: string }) {
   const selectedConvData = conversations.find((c) => c.id === selectedConv);
   const selectedMessages = selectedConv ? messages[selectedConv] || [] : [];
 
-  // Mobile-first: show list OR chat
+  const lastInboundAt = useMemo(() => {
+    const inbound = [...selectedMessages].reverse().find((m) => m.direction === "inbound");
+    return inbound ? new Date(inbound.created_at) : null;
+  }, [selectedMessages]);
+  const within24h = lastInboundAt ? (Date.now() - lastInboundAt.getTime()) < 24 * 60 * 60 * 1000 : false;
+
+  const exportConversationCsv = () => {
+    if (!selectedConvData) return;
+    const name = selectedConvData.leads?.name || selectedConvData.whatsapp_number;
+    downloadCsv(
+      `velora-conversa-${name}-${new Date().toISOString().slice(0, 10)}.csv`,
+      ["Data", "Direção", "Tipo", "Conteúdo"],
+      selectedMessages.map((m) => [
+        new Date(m.created_at).toLocaleString("pt-BR"),
+        m.direction === "outbound" ? "Velora" : "Lead",
+        m.message_type,
+        renderMessageContent(m.content).text,
+      ]),
+    );
+    toast({ title: "Conversa exportada" });
+  };
+
+  const exportAllConversationsCsv = () => {
+    downloadCsv(
+      `velora-conversas-${new Date().toISOString().slice(0, 10)}.csv`,
+      ["Criada em", "Última msg", "Lead", "E-mail", "WhatsApp", "Etapa", "Status", "Mensagens", "Resumo"],
+      conversations.map((c) => [
+        new Date(c.created_at).toLocaleString("pt-BR"),
+        c.last_message_at ? new Date(c.last_message_at).toLocaleString("pt-BR") : "",
+        c.leads?.name || "",
+        c.leads?.email || "",
+        c.whatsapp_number,
+        stageLabels[c.stage] || c.stage,
+        c.status,
+        c.conversation_messages?.[0]?.count ?? 0,
+        c.context_summary || "",
+      ]),
+    );
+    toast({ title: "Conversas exportadas" });
+  };
+
+  const sendManualMessage = async () => {
+    if (!draft.trim() || !selectedConv || !selectedConvData) return;
+    if (!within24h) {
+      toast({
+        title: "Janela de 24h expirada",
+        description: "A Meta só permite mensagens livres dentro de 24h da última resposta do lead.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSending(true);
+    try {
+      const res = await supabase.functions.invoke("whatsapp-send", {
+        body: {
+          to: selectedConvData.whatsapp_number,
+          body: draft.trim(),
+          conversationId: selectedConv,
+        },
+      });
+      if (res.error) throw res.error;
+      setDraft("");
+      fetchMessages(selectedConv);
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar mensagem", description: err.message, variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
+  };
+
   if (selectedConv && selectedConvData) {
     return (
-      <div className="border border-border rounded-lg overflow-hidden flex flex-col" style={{ height: "calc(100vh - 320px)", minHeight: 400 }}>
-        {/* Chat header */}
+      <div className="border border-border rounded-lg overflow-hidden flex flex-col" style={{ height: "calc(100vh - 240px)", minHeight: 400 }}>
         <div className="bg-card border-b border-border px-4 py-3 flex items-center gap-3">
           <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setSelectedConv(null)}>
             <ChevronLeft className="h-5 w-5" />
@@ -158,7 +230,7 @@ export default function ConversationsTab({ password }: { password: string }) {
             <p className="font-medium text-sm truncate">
               {selectedConvData.leads?.name || "Desconhecido"}
             </p>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
               <Phone className="h-3 w-3" />
               <span>{selectedConvData.whatsapp_number}</span>
               <Badge variant="outline" className="text-[10px] ml-1">
@@ -169,12 +241,14 @@ export default function ConversationsTab({ password }: { password: string }) {
               </Badge>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => fetchMessages(selectedConv)}>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={exportConversationCsv} title="Exportar conversa">
+            <Download className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => fetchMessages(selectedConv)}>
             <RefreshCw className={`h-3.5 w-3.5 ${messagesLoading ? "animate-spin" : ""}`} />
           </Button>
         </div>
 
-        {/* Messages area */}
         <ScrollArea className="flex-1 p-4">
           {messagesLoading && selectedMessages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
@@ -189,25 +263,14 @@ export default function ConversationsTab({ password }: { password: string }) {
               {selectedMessages.map((msg) => {
                 const { text, isTemplate } = renderMessageContent(msg.content);
                 return (
-                  <div
-                    key={msg.id}
-                    className={`flex ${msg.direction === "outbound" ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
-                        msg.direction === "outbound"
-                          ? "bg-primary/20 text-foreground rounded-br-md"
-                          : "bg-muted text-foreground rounded-bl-md"
-                      }`}
-                    >
+                  <div key={msg.id} className={`flex ${msg.direction === "outbound" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${msg.direction === "outbound" ? "bg-primary/20 text-foreground rounded-br-md" : "bg-muted text-foreground rounded-bl-md"}`}>
                       <p className="text-[10px] font-medium mb-1 opacity-60">
                         {msg.direction === "outbound" ? "Velora" : "Lead"}
                       </p>
                       {isTemplate ? (
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
-                            Template
-                          </Badge>
+                          <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">Template</Badge>
                           <p className="italic opacity-90">{text}</p>
                         </div>
                       ) : (
@@ -226,13 +289,34 @@ export default function ConversationsTab({ password }: { password: string }) {
           )}
         </ScrollArea>
 
-        {/* Context summary */}
         {selectedConvData.context_summary && (
           <div className="border-t border-border bg-card/50 px-4 py-2">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Resumo do contexto</p>
-            <p className="text-xs text-muted-foreground line-clamp-3">{selectedConvData.context_summary}</p>
+            <p className="text-xs text-muted-foreground line-clamp-2">{selectedConvData.context_summary}</p>
           </div>
         )}
+
+        <div className="border-t border-border bg-card px-3 py-2 space-y-2">
+          {!within24h && (
+            <div className="flex items-start gap-2 text-[11px] text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 rounded px-2 py-1.5">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span>Janela de 24h expirada. Aguarde o lead responder para enviar texto livre.</span>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendManualMessage(); } }}
+              placeholder={within24h ? "Escreva uma mensagem..." : "Janela de 24h expirada"}
+              disabled={!within24h || sending}
+              className="flex-1"
+            />
+            <Button onClick={sendManualMessage} disabled={!within24h || sending || !draft.trim()} size="icon">
+              <Send className={`h-4 w-4 ${sending ? "animate-pulse" : ""}`} />
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -240,7 +324,11 @@ export default function ConversationsTab({ password }: { password: string }) {
   // Conversation list view
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={exportAllConversationsCsv} disabled={loading || conversations.length === 0}>
+          <Download className="h-4 w-4 mr-2" />
+          Exportar CSV
+        </Button>
         <Button variant="outline" size="sm" onClick={fetchConversations} disabled={loading}>
           <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Atualizar
