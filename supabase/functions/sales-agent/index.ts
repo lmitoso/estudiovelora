@@ -42,23 +42,29 @@ Pacote Essencial — R$ 97
 - Direção de arte básica
 - Entrega em até 48h úteis
 → Use para: quem quer testar, marcas menores, primeira compra
+→ Link de pagamento: https://buy.stripe.com/test_5kQaEQ5IF1pJ0z25mX0gw00
 
 Pacote Impacto — R$ 247 (mais vendido)
 - 5 fotos editoriais + 2 vídeos curtos (reels/stories)
 - Direção de arte personalizada
 - Entrega em até 48h úteis
 → Use para: lançamentos, campanhas sazonais, quem precisa de foto + vídeo
+→ Link de pagamento: https://buy.stripe.com/test_28E4gs5IF2tN81u02D0gw01
 
 Pacote Campanha Completa — R$ 497
 - 10 fotos editoriais + 5 vídeos curtos
 - Direção criativa completa com moodboard
 - Prioridade de entrega 24-48h
 → Use para: marcas consolidadas, presença visual consistente, grandes lançamentos
+→ Link de pagamento: https://buy.stripe.com/test_4gM5kwb2Z4BVdlO02D0gw02
 
-Avulso:
+Avulso / Combinação customizada:
 - Foto editorial: R$ 29,90 cada
 - Vídeo curto: R$ 49,90 cada
-→ Use para: complementar pacote, pedido pontual, cliente indeciso sobre volume
+→ Use para: complementar pacote, pedido pontual, qualquer combinação fora dos 3 pacotes acima
+→ IMPORTANTE: para gerar link de pagamento de combinação custom (ex: 4 fotos + 1 vídeo, 20 fotos, etc),
+   chame a tool generate_custom_payment_link com: photos_qty, videos_qty, customer_email, customer_name.
+   A tool retorna a URL Stripe que você envia ao cliente.
 
 PRODUTOS EDUCACIONAIS (para quem quer aprender a criar):
 
@@ -377,6 +383,23 @@ serve(async (req) => {
         ],
         max_tokens: 500,
         temperature: 0.7,
+        tools: [{
+          type: "function",
+          function: {
+            name: "generate_custom_payment_link",
+            description: "Gera link de pagamento Stripe para combinação custom de fotos/vídeos avulsos (qualquer combinação fora dos 3 pacotes fixos). Use APENAS quando o cliente pedir uma quantidade que não bate com Essencial/Impacto/Campanha Completa.",
+            parameters: {
+              type: "object",
+              properties: {
+                photos_qty: { type: "integer", description: "Quantidade de fotos editoriais" },
+                videos_qty: { type: "integer", description: "Quantidade de vídeos curtos" },
+                customer_email: { type: "string", description: "Email do cliente (do lead)" },
+                customer_name: { type: "string", description: "Nome do cliente ou marca" },
+              },
+              required: ["photos_qty", "videos_qty", "customer_email"],
+            },
+          },
+        }],
       }),
     });
 
@@ -385,7 +408,44 @@ serve(async (req) => {
       throw new Error(`AI Gateway error [${aiResponse.status}]: ${JSON.stringify(aiData)}`);
     }
 
-    const reply = aiData.choices?.[0]?.message?.content || "Desculpe, não consegui processar sua mensagem. Vou encaminhar para nossa equipe.";
+    let reply = aiData.choices?.[0]?.message?.content || "";
+    const toolCalls = aiData.choices?.[0]?.message?.tool_calls;
+
+    // Handle tool call: generate custom payment link
+    if (toolCalls && toolCalls.length > 0) {
+      const tc = toolCalls[0];
+      if (tc.function?.name === "generate_custom_payment_link") {
+        try {
+          const args = JSON.parse(tc.function.arguments || "{}");
+          if (!args.customer_email) args.customer_email = lead?.email;
+          if (!args.customer_name) args.customer_name = lead?.name;
+          args.whatsapp = lead?.whatsapp || conversation.whatsapp_number;
+
+          const linkRes = await fetch(
+            `${Deno.env.get("SUPABASE_URL")}/functions/v1/create-custom-payment-link`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+              },
+              body: JSON.stringify(args),
+            }
+          );
+          const linkData = await linkRes.json();
+          if (linkData.url) {
+            reply = `Pronto. Para ${args.photos_qty} foto(s) + ${args.videos_qty} vídeo(s), o valor é R$ ${linkData.price.toFixed(2).replace(".", ",")}.\n\nSegue o link de pagamento:\n${linkData.url}\n\nAssim que confirmar, já começamos o briefing.`;
+          } else {
+            reply = "Tive um probleminha para gerar o link agora. Pode me confirmar a quantidade de fotos e vídeos que deseja?";
+          }
+        } catch (e) {
+          console.error("tool call error:", e);
+          reply = "Tive um probleminha para gerar o link agora. Pode me confirmar a quantidade de fotos e vídeos que deseja?";
+        }
+      }
+    }
+
+    if (!reply) reply = "Desculpe, não consegui processar sua mensagem. Vou encaminhar para nossa equipe.";
 
     // Update context summary with AI (lightweight)
     const newSummary = conversation.context_summary
