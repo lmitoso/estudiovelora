@@ -42,23 +42,29 @@ Pacote Essencial — R$ 97
 - Direção de arte básica
 - Entrega em até 48h úteis
 → Use para: quem quer testar, marcas menores, primeira compra
+→ Link de pagamento: https://buy.stripe.com/test_5kQaEQ5IF1pJ0z25mX0gw00
 
 Pacote Impacto — R$ 247 (mais vendido)
 - 5 fotos editoriais + 2 vídeos curtos (reels/stories)
 - Direção de arte personalizada
 - Entrega em até 48h úteis
 → Use para: lançamentos, campanhas sazonais, quem precisa de foto + vídeo
+→ Link de pagamento: https://buy.stripe.com/test_28E4gs5IF2tN81u02D0gw01
 
 Pacote Campanha Completa — R$ 497
 - 10 fotos editoriais + 5 vídeos curtos
 - Direção criativa completa com moodboard
 - Prioridade de entrega 24-48h
 → Use para: marcas consolidadas, presença visual consistente, grandes lançamentos
+→ Link de pagamento: https://buy.stripe.com/test_4gM5kwb2Z4BVdlO02D0gw02
 
-Avulso:
+Avulso / Combinação customizada:
 - Foto editorial: R$ 29,90 cada
 - Vídeo curto: R$ 49,90 cada
-→ Use para: complementar pacote, pedido pontual, cliente indeciso sobre volume
+→ Use para: complementar pacote, pedido pontual, qualquer combinação fora dos 3 pacotes acima
+→ IMPORTANTE: para gerar link de pagamento de combinação custom (ex: 4 fotos + 1 vídeo, 20 fotos, etc),
+   chame a tool generate_custom_payment_link com: photos_qty, videos_qty, customer_email, customer_name.
+   A tool retorna a URL Stripe que você envia ao cliente.
 
 PRODUTOS EDUCACIONAIS (para quem quer aprender a criar):
 
