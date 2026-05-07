@@ -201,6 +201,7 @@ export default function ConversationsTab({ password }: { password: string }) {
 
   const sendManualMessage = async () => {
     if (!draft.trim() || !selectedConv || !selectedConvData) return;
+    const isCeoActive = selectedConvData.handoff_status === "ceo_active" || selectedConvData.handoff_status === "ceo_pending";
     if (!within24h) {
       toast({
         title: "Janela de 24h expirada",
@@ -211,20 +212,36 @@ export default function ConversationsTab({ password }: { password: string }) {
     }
     setSending(true);
     try {
-      const res = await supabase.functions.invoke("whatsapp-send", {
-        body: {
-          to: selectedConvData.whatsapp_number,
-          body: draft.trim(),
-          conversationId: selectedConv,
-        },
-      });
+      // Se você assumiu, manda pela função CEO (que silencia a Luna). Senão, fluxo padrão.
+      const fnName = isCeoActive ? "conversation-send-message" : "whatsapp-send";
+      const body = isCeoActive
+        ? { adminPassword: password, conversationId: selectedConv, content: draft.trim() }
+        : { to: selectedConvData.whatsapp_number, body: draft.trim(), conversationId: selectedConv };
+      const res = await supabase.functions.invoke(fnName, { body });
       if (res.error) throw res.error;
       setDraft("");
       fetchMessages(selectedConv);
+      fetchConversations();
     } catch (err: any) {
       toast({ title: "Erro ao enviar mensagem", description: err.message, variant: "destructive" });
     } finally {
       setSending(false);
+    }
+  };
+
+  const toggleHandoff = async (action: "assume" | "release") => {
+    if (!selectedConv) return;
+    try {
+      const res = await supabase.functions.invoke("conversation-takeover", {
+        body: { adminPassword: password, conversationId: selectedConv, action },
+      });
+      if (res.error) throw res.error;
+      toast({
+        title: action === "assume" ? "Você assumiu a conversa" : "Conversa devolvida pra Luna",
+      });
+      fetchConversations();
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
     }
   };
 
