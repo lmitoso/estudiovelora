@@ -399,6 +399,35 @@ export default function ConversationsTab({ password }: { password: string }) {
           <p className="text-xs mt-1">As conversas aparecerão aqui quando leads responderem no WhatsApp.</p>
         </div>
       ) : (
+        <>
+        {(() => {
+          const pending = conversations.filter((c) => c.handoff_status === "ceo_pending");
+          if (pending.length === 0) return null;
+          return (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 space-y-3 mb-3">
+              <p className="text-xs font-semibold text-amber-300 uppercase tracking-wider">
+                🔥 Aguardando você ({pending.length})
+              </p>
+              <div className="grid gap-2">
+                {pending.map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() => openConversation(c.id)}
+                    className="bg-card border border-amber-500/30 rounded-md p-3 cursor-pointer hover:border-amber-500/60 transition-colors"
+                  >
+                    <p className="font-medium text-sm">{c.leads?.name || c.whatsapp_number}</p>
+                    {c.briefing && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {c.briefing.pacote || ""}{c.briefing.valor ? ` · ${c.briefing.valor}` : ""}{c.briefing.marca ? ` · ${c.briefing.marca}` : ""}
+                      </p>
+                    )}
+                    <p className="text-[10px] text-amber-300 mt-1">Toque para abrir e assumir</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
         <div className="grid gap-3">
           {conversations.map((conv) => {
             const msgCount = conv.conversation_messages?.[0]?.count || 0;
