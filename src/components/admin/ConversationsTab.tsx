@@ -18,6 +18,7 @@ type Conversation = {
   created_at: string;
   handoff_status?: string | null;
   handoff_at?: string | null;
+  last_followup_at?: string | null;
   briefing?: any;
   leads: { name: string; email: string } | null;
   conversation_messages: { count: number }[];
