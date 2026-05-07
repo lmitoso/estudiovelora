@@ -327,6 +327,15 @@ serve(async (req) => {
       });
     }
 
+    // HANDOFF GATE: se já entregou para o CEO, Luna não responde mais.
+    if (conversation.handoff_status && conversation.handoff_status !== "luna") {
+      console.log(`[sales-agent] handoff=${conversation.handoff_status} → silenciada (conv ${conversationId})`);
+      return new Response(
+        JSON.stringify({ skipped: true, reason: "handoff_active", handoff_status: conversation.handoff_status }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Get recent message history (last 20 messages)
     const { data: messages } = await supabase
       .from("conversation_messages")
