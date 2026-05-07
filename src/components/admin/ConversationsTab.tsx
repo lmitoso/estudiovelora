@@ -478,6 +478,7 @@ export default function ConversationsTab({ password }: { password: string }) {
             );
           })}
         </div>
+        </>
       )}
     </div>
   );
