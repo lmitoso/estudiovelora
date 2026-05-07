@@ -90,17 +90,45 @@ export default function Admin() {
     }
   }, [authenticated]);
 
-  // Realtime: notify on inbound WhatsApp messages
+  // Realtime: notifications for leads, conversations, messages
   useEffect(() => {
     if (!authenticated) return;
     const channel = supabase
-      .channel("admin-leads-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, () => fetchLeads())
+      .channel("admin-realtime-global")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "leads" }, (payload) => {
+        const lead = payload.new as any;
+        notifyIncomingMessage({
+          title: "🌱 Novo lead",
+          body: `${lead?.name || "Sem nome"}${lead?.email ? ` · ${lead.email}` : ""}`,
+        });
+        fetchLeads();
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "leads" }, () => fetchLeads())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "conversations" }, (payload) => {
+        const c = payload.new as any;
+        notifyIncomingMessage({
+          title: "💬 Nova conversa",
+          body: `Lead respondeu: ${c?.whatsapp_number || ""}`,
+          conversationId: c?.id,
+        });
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "conversations" }, (payload) => {
+        const newConv = payload.new as any;
+        const oldConv = payload.old as any;
+        if (newConv?.handoff_status === "ceo_pending" && oldConv?.handoff_status !== "ceo_pending") {
+          const b = newConv?.briefing || {};
+          notifyIncomingMessage({
+            title: "🎯 Cliente fechado — briefing pronto",
+            body: `${b.nome || newConv.whatsapp_number}${b.pacote ? ` · ${b.pacote}` : ""}${b.valor ? ` · ${b.valor}` : ""}`,
+            conversationId: newConv?.id,
+          });
+        }
+      })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "conversation_messages" }, (payload) => {
         const msg = payload.new as any;
         if (msg?.direction === "inbound") {
           notifyIncomingMessage({
-            title: "Nova mensagem no WhatsApp",
+            title: "✉️ Nova mensagem WhatsApp",
             body: typeof msg.content === "string" ? msg.content.slice(0, 140) : "Você recebeu uma nova mensagem.",
             conversationId: msg.conversation_id,
           });
