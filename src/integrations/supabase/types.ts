@@ -54,8 +54,11 @@ export type Database = {
       }
       conversations: {
         Row: {
+          briefing: Json | null
           context_summary: string | null
           created_at: string
+          handoff_at: string | null
+          handoff_status: string
           id: string
           last_message_at: string | null
           lead_id: string | null
@@ -66,8 +69,11 @@ export type Database = {
           whatsapp_number: string
         }
         Insert: {
+          briefing?: Json | null
           context_summary?: string | null
           created_at?: string
+          handoff_at?: string | null
+          handoff_status?: string
           id?: string
           last_message_at?: string | null
           lead_id?: string | null
@@ -78,8 +84,11 @@ export type Database = {
           whatsapp_number: string
         }
         Update: {
+          briefing?: Json | null
           context_summary?: string | null
           created_at?: string
+          handoff_at?: string | null
+          handoff_status?: string
           id?: string
           last_message_at?: string | null
           lead_id?: string | null
