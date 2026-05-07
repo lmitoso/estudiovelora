@@ -57,12 +57,15 @@ export type Database = {
           briefing: Json | null
           context_summary: string | null
           created_at: string
+          followup_base_at: string | null
+          followup_step: number
           handoff_at: string | null
           handoff_status: string
           id: string
           last_followup_at: string | null
           last_message_at: string | null
           lead_id: string | null
+          lead_type: string | null
           next_follow_up_at: string | null
           stage: string
           status: string
@@ -73,12 +76,15 @@ export type Database = {
           briefing?: Json | null
           context_summary?: string | null
           created_at?: string
+          followup_base_at?: string | null
+          followup_step?: number
           handoff_at?: string | null
           handoff_status?: string
           id?: string
           last_followup_at?: string | null
           last_message_at?: string | null
           lead_id?: string | null
+          lead_type?: string | null
           next_follow_up_at?: string | null
           stage?: string
           status?: string
@@ -89,12 +95,15 @@ export type Database = {
           briefing?: Json | null
           context_summary?: string | null
           created_at?: string
+          followup_base_at?: string | null
+          followup_step?: number
           handoff_at?: string | null
           handoff_status?: string
           id?: string
           last_followup_at?: string | null
           last_message_at?: string | null
           lead_id?: string | null
+          lead_type?: string | null
           next_follow_up_at?: string | null
           stage?: string
           status?: string
