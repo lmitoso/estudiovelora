@@ -379,10 +379,25 @@ export default function ConversationsTab({ password }: { password: string }) {
 
         <div className="border-t border-border bg-card px-3 py-2 space-y-2">
           {!within24h && (
-            <div className="flex items-start gap-2 text-[11px] text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 rounded px-2 py-1.5">
-              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-              <span>Janela de 24h expirada. Aguarde o lead responder para enviar texto livre.</span>
-            </div>
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full h-8 text-xs border-primary/40 text-primary hover:bg-primary/10"
+                onClick={sendFollowup}
+                disabled={sendingFollowup || !!followupBlockedUntil}
+              >
+                {sendingFollowup
+                  ? "Enviando follow-up..."
+                  : followupBlockedUntil
+                    ? `Follow-up disponível em ${Math.ceil((followupBlockedUntil - Date.now()) / (60 * 60 * 1000))}h`
+                    : "📲 Enviar follow-up"}
+              </Button>
+              <div className="flex items-start gap-2 text-[11px] text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 rounded px-2 py-1.5">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                <span>Janela de 24h expirada. Aguarde o lead responder para enviar texto livre.</span>
+              </div>
+            </>
           )}
           <div className="flex gap-2">
             <Input
