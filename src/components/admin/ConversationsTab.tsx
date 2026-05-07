@@ -16,6 +16,9 @@ type Conversation = {
   context_summary: string | null;
   last_message_at: string | null;
   created_at: string;
+  handoff_status?: string | null;
+  handoff_at?: string | null;
+  briefing?: any;
   leads: { name: string; email: string } | null;
   conversation_messages: { count: number }[];
 };
@@ -42,6 +45,12 @@ const statusColors: Record<string, string> = {
   negotiating: "bg-purple-500/20 text-purple-400 border-purple-500/30",
   closed_won: "bg-primary/20 text-primary border-primary/30",
   closed_lost: "bg-destructive/20 text-destructive border-destructive/30",
+};
+
+const handoffBadge: Record<string, { label: string; cls: string }> = {
+  luna: { label: "🤖 Luna", cls: "bg-blue-500/15 text-blue-300 border-blue-500/30" },
+  ceo_pending: { label: "🔥 Aguardando você", cls: "bg-amber-500/20 text-amber-300 border-amber-500/40" },
+  ceo_active: { label: "👤 Você ativo", cls: "bg-primary/20 text-primary border-primary/40" },
 };
 
 // Mapeia SIDs de templates Twilio aprovados para descrições humanizadas
