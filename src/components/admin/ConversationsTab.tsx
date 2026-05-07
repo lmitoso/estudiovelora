@@ -81,6 +81,7 @@ export default function ConversationsTab({ password }: { password: string }) {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendingFollowup, setSendingFollowup] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const fetchConversations = async () => {
