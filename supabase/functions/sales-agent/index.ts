@@ -477,28 +477,53 @@ Lead: ${inboundMessage}
       }
     }
 
+    // Classificar lead_type se ainda não definido (servico vs aprender)
+    let detectedLeadType: string | null = (conversation as any).lead_type || null;
+    if (!didHandoff && !detectedLeadType) {
+      try {
+        const classifyPrompt = `Classifique o interesse principal deste lead a partir da conversa abaixo. Responda APENAS uma palavra:
+- "servico" → quer contratar a Velora para criar campanha/fotos/vídeos para a MARCA dele
+- "aprender" → quer aprender IA, comprar curso, pack ou método (interesse educacional)
+- "indefinido" → ainda não dá para saber
+
+Conversa:
+${conversationHistoryStr}
+Lead: ${inboundMessage}
+Luna: ${reply}`;
+        const cl = await fetch(AI_GATEWAY_URL, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash-lite",
+            messages: [{ role: "user", content: classifyPrompt }],
+            max_tokens: 10,
+            temperature: 0,
+          }),
+        });
+        const clData = await cl.json();
+        const raw = (clData.choices?.[0]?.message?.content || "").toLowerCase().trim();
+        if (raw.includes("servico") || raw.includes("serviço")) detectedLeadType = "servico";
+        else if (raw.includes("aprender")) detectedLeadType = "aprender";
+      } catch (e) {
+        console.error("[sales-agent] lead_type classification failed:", e);
+      }
+    }
+
     // Update conversation (skip se acabamos de fazer handoff — já foi atualizado acima)
     if (!didHandoff) {
-      await supabase
-        .from("conversations")
-        .update({
-          context_summary: newSummary.substring(0, 2000),
-          stage: newStage,
-          status: conversation.status === "new" ? "active" : conversation.status,
-          last_message_at: new Date().toISOString(),
-          next_follow_up_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
-        })
-        .eq("id", conversationId);
-
-      // Schedule follow-up if needed
-      if (newStage !== "closing") {
-        await supabase.from("follow_up_schedule").insert({
-          conversation_id: conversationId,
-          scheduled_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
-          type: "check_in",
-          message_content: null,
-        });
+      const updatePayload: Record<string, any> = {
+        context_summary: newSummary.substring(0, 2000),
+        stage: newStage,
+        status: conversation.status === "new" ? "active" : conversation.status,
+        last_message_at: new Date().toISOString(),
+        // Reseta a base da trilha de follow-up sempre que Luna responder ao lead
+        followup_base_at: new Date().toISOString(),
+        followup_step: 0,
+      };
+      if (detectedLeadType && !(conversation as any).lead_type) {
+        updatePayload.lead_type = detectedLeadType;
       }
+      await supabase.from("conversations").update(updatePayload).eq("id", conversationId);
     }
 
     return new Response(JSON.stringify({ reply, stage: newStage }), {
