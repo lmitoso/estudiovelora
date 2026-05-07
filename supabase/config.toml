@@ -85,3 +85,6 @@ verify_jwt = false
 
 [functions.conversation-send-message]
 verify_jwt = false
+
+[functions.conversation-send-followup]
+verify_jwt = false
