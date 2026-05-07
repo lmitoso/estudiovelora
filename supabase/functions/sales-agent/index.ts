@@ -514,7 +514,7 @@ Luna: ${reply}`;
       const updatePayload: Record<string, any> = {
         context_summary: newSummary.substring(0, 2000),
         stage: newStage,
-        status: conversation.status === "new" ? "active" : conversation.status,
+        status: (conversation.status === "new" || conversation.status === "inactive") ? "active" : conversation.status,
         last_message_at: new Date().toISOString(),
         // Reseta a base da trilha de follow-up sempre que Luna responder ao lead
         followup_base_at: new Date().toISOString(),
