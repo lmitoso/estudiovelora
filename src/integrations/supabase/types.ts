@@ -60,6 +60,7 @@ export type Database = {
           handoff_at: string | null
           handoff_status: string
           id: string
+          last_followup_at: string | null
           last_message_at: string | null
           lead_id: string | null
           next_follow_up_at: string | null
@@ -75,6 +76,7 @@ export type Database = {
           handoff_at?: string | null
           handoff_status?: string
           id?: string
+          last_followup_at?: string | null
           last_message_at?: string | null
           lead_id?: string | null
           next_follow_up_at?: string | null
@@ -90,6 +92,7 @@ export type Database = {
           handoff_at?: string | null
           handoff_status?: string
           id?: string
+          last_followup_at?: string | null
           last_message_at?: string | null
           lead_id?: string | null
           next_follow_up_at?: string | null
