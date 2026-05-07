@@ -265,8 +265,22 @@ export default function ConversationsTab({ password }: { password: string }) {
               <Badge className={`text-[10px] ${statusColors[selectedConvData.status] || ""}`}>
                 {selectedConvData.status.replace("_", " ")}
               </Badge>
+              {(() => {
+                const h = selectedConvData.handoff_status || "luna";
+                const b = handoffBadge[h] || handoffBadge.luna;
+                return <Badge className={`text-[10px] ${b.cls}`}>{b.label}</Badge>;
+              })()}
             </div>
           </div>
+          {(selectedConvData.handoff_status === "luna" || selectedConvData.handoff_status === "ceo_pending") ? (
+            <Button variant="default" size="sm" className="h-8" onClick={() => toggleHandoff("assume")}>
+              Assumir
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" className="h-8" onClick={() => toggleHandoff("release")}>
+              Devolver pra Luna
+            </Button>
+          )}
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={exportConversationCsv} title="Exportar conversa">
             <Download className="h-3.5 w-3.5" />
           </Button>
@@ -274,6 +288,21 @@ export default function ConversationsTab({ password }: { password: string }) {
             <RefreshCw className={`h-3.5 w-3.5 ${messagesLoading ? "animate-spin" : ""}`} />
           </Button>
         </div>
+
+        {selectedConvData.briefing && (
+          <div className="bg-amber-500/5 border-b border-amber-500/30 px-4 py-3 text-xs space-y-1">
+            <p className="text-[10px] uppercase tracking-wider text-amber-300 font-semibold mb-1">📋 Briefing do cliente</p>
+            {Object.entries(selectedConvData.briefing).map(([k, v]) => {
+              if (v === "" || v === null || v === undefined || v === false) return null;
+              return (
+                <p key={k} className="text-muted-foreground">
+                  <span className="text-foreground/80 capitalize">{k.replace(/_/g, " ")}:</span>{" "}
+                  {typeof v === "boolean" ? "Sim" : String(v)}
+                </p>
+              );
+            })}
+          </div>
+        )}
 
         <ScrollArea className="flex-1 p-4">
           {messagesLoading && selectedMessages.length === 0 ? (
