@@ -18,6 +18,7 @@ type Conversation = {
   created_at: string;
   handoff_status?: string | null;
   handoff_at?: string | null;
+  last_followup_at?: string | null;
   briefing?: any;
   leads: { name: string; email: string } | null;
   conversation_messages: { count: number }[];
@@ -80,6 +81,7 @@ export default function ConversationsTab({ password }: { password: string }) {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendingFollowup, setSendingFollowup] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const fetchConversations = async () => {
@@ -229,6 +231,30 @@ export default function ConversationsTab({ password }: { password: string }) {
     }
   };
 
+  const followupBlockedUntil = useMemo(() => {
+    if (!selectedConvData?.last_followup_at) return null;
+    const next = new Date(selectedConvData.last_followup_at).getTime() + 24 * 60 * 60 * 1000;
+    return next > Date.now() ? next : null;
+  }, [selectedConvData?.last_followup_at]);
+
+  const sendFollowup = async () => {
+    if (!selectedConv) return;
+    setSendingFollowup(true);
+    try {
+      const res = await supabase.functions.invoke("conversation-send-followup", {
+        body: { adminPassword: password, conversationId: selectedConv },
+      });
+      if (res.error) throw res.error;
+      toast({ title: "Follow-up enviado!" });
+      fetchMessages(selectedConv);
+      fetchConversations();
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar follow-up", description: err.message, variant: "destructive" });
+    } finally {
+      setSendingFollowup(false);
+    }
+  };
+
   const toggleHandoff = async (action: "assume" | "release") => {
     if (!selectedConv) return;
     try {
@@ -353,10 +379,25 @@ export default function ConversationsTab({ password }: { password: string }) {
 
         <div className="border-t border-border bg-card px-3 py-2 space-y-2">
           {!within24h && (
-            <div className="flex items-start gap-2 text-[11px] text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 rounded px-2 py-1.5">
-              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-              <span>Janela de 24h expirada. Aguarde o lead responder para enviar texto livre.</span>
-            </div>
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full h-8 text-xs border-primary/40 text-primary hover:bg-primary/10"
+                onClick={sendFollowup}
+                disabled={sendingFollowup || !!followupBlockedUntil}
+              >
+                {sendingFollowup
+                  ? "Enviando follow-up..."
+                  : followupBlockedUntil
+                    ? `Follow-up disponível em ${Math.ceil((followupBlockedUntil - Date.now()) / (60 * 60 * 1000))}h`
+                    : "📲 Enviar follow-up"}
+              </Button>
+              <div className="flex items-start gap-2 text-[11px] text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 rounded px-2 py-1.5">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                <span>Janela de 24h expirada. Aguarde o lead responder para enviar texto livre.</span>
+              </div>
+            </>
           )}
           <div className="flex gap-2">
             <Input
