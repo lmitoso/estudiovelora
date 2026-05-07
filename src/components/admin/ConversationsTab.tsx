@@ -231,6 +231,30 @@ export default function ConversationsTab({ password }: { password: string }) {
     }
   };
 
+  const followupBlockedUntil = useMemo(() => {
+    if (!selectedConvData?.last_followup_at) return null;
+    const next = new Date(selectedConvData.last_followup_at).getTime() + 24 * 60 * 60 * 1000;
+    return next > Date.now() ? next : null;
+  }, [selectedConvData?.last_followup_at]);
+
+  const sendFollowup = async () => {
+    if (!selectedConv) return;
+    setSendingFollowup(true);
+    try {
+      const res = await supabase.functions.invoke("conversation-send-followup", {
+        body: { adminPassword: password, conversationId: selectedConv },
+      });
+      if (res.error) throw res.error;
+      toast({ title: "Follow-up enviado!" });
+      fetchMessages(selectedConv);
+      fetchConversations();
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar follow-up", description: err.message, variant: "destructive" });
+    } finally {
+      setSendingFollowup(false);
+    }
+  };
+
   const toggleHandoff = async (action: "assume" | "release") => {
     if (!selectedConv) return;
     try {
