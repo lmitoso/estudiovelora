@@ -79,3 +79,9 @@ verify_jwt = false
 
 [functions.whoami-stripe]
 verify_jwt = false
+
+[functions.conversation-takeover]
+verify_jwt = false
+
+[functions.conversation-send-message]
+verify_jwt = false

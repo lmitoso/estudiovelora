@@ -1,63 +1,157 @@
-## Situação atual
+## Objetivo
 
-A Luna (sales-agent) hoje só tem links prontos para os **produtos educacionais via Kiwify**:
+1. Trocar Stripe pelos novos links Kiwify dos pacotes + Pix manual para personalizados.
+2. Criar fluxo de **handoff Luna → CEO** com briefing estruturado.
+3. Empacotar o `/admin` como **app mobile** (Capacitor) com **notificações em tempo real** dos eventos-chave.
 
-- Pack Editorial — R$ 37 → `https://pay.kiwify.com.br/SLgYyHP`
-- Curso Completo — R$ 497 → `https://pay.kiwify.com.br/G0oqvsb`
+Sem mexer no prompt da Luna além da troca de links/regras de pagamento (você reescreve o prompt fora).
 
-Para os **serviços** (Essencial R$ 97, Impacto R$ 247, Campanha Completa R$ 497, fotos/vídeos avulsos), ela **não envia link nenhum** — só fala "posso gerar o link de pagamento" e o fluxo trava. Hoje o site gera pagamento via `create-payment` (Stripe Checkout), mas isso exige passar por todo o funil do site (`/`).
+---
 
-## O que vamos fazer
+## Parte 1 — Pagamentos (sem Stripe agora)
 
-Dar à Luna a capacidade de enviar link Stripe correto para qualquer combinação de serviço, sem ela depender do site.
+### Links Kiwify oficiais (substituir nos lugares certos)
 
-### 1. Criar Payment Links fixos no Stripe para os 3 pacotes
+- Essencial R$ 97 → `https://pay.kiwify.com.br/8OjgeBH`
+- Impacto R$ 247 → `https://pay.kiwify.com.br/HLTtg0k`
+- Campanha Completa R$ 497 → `https://pay.kiwify.com.br/KKZmrag`
 
-Usar Stripe Payment Links (URLs permanentes, sem precisar criar sessão a cada venda). Vou criar via tool `stripe`:
+### Edits no `sales-agent/index.ts`
 
-- Pacote Essencial — R$ 97 (3 fotos)
-- Pacote Impacto — R$ 247 (5 fotos + 2 vídeos)
-- Pacote Campanha Completa — R$ 497 (10 fotos + 5 vídeos)
+- Inserir os 3 links na seção "O QUE A VELORA OFERECE" do prompt.
+- Remover/desativar a tool `generate_custom_payment_link` (ou deixar inativa) — para personalizado, Luna deve:
+  - Calcular preço (29,90/foto + 49,90/vídeo).
+  - Enviar Pix CPF: **05894688396** (titular: você).
+  - Pedir comprovante por foto.
+  - Avisar: *"No momento, orçamentos personalizados são pagos só por Pix. Nos próximos dias liberamos cartão de crédito também."*
+- Adicionar nota fixa em todas as mensagens de pagamento: *"Se o link não estiver clicável, salve nosso contato na agenda e o link aparece azul/clicável."*
 
-Resultado: 3 URLs estáveis (`https://buy.stripe.com/...`) que a Luna manda direto no WhatsApp.
+### Edge function `create-custom-payment-link`
 
-### 2. Criar edge function `create-custom-payment-link` para orçamentos fora dos pacotes
+Manter o arquivo mas marcar como deprecated (comentário no topo). Não desregistrar do `config.toml` por enquanto — sem custo, e útil quando Stripe voltar.
 
-Quando o cliente quiser combinação custom (ex: 4 fotos + 1 vídeo, ou 20 fotos), a Luna chama essa função via tool-calling e recebe um link Stripe gerado na hora.
+---
 
-- Input: `photos_qty`, `videos_qty`, `customer_email`, `customer_name`, `whatsapp`
-- Lógica: aplica preço de combo se bater com pacote, senão calcula avulso (29,90/foto + 49,90/vídeo) — mesma regra de `create-payment`
-- Cria `order` no banco com status `pending` e gera Stripe Checkout Session
-- Retorna `url` para a Luna mandar
+## Parte 2 — Handoff Luna → CEO (briefing)
 
-### 3. Atualizar o prompt da Luna em `sales-agent/index.ts`
+### Migration no banco
 
-Adicionar na seção "O QUE A VELORA OFERECE":
+Adicionar em `conversations`:
+- `handoff_status` text default `'luna'` — valores: `luna`, `ceo_pending`, `ceo_active`
+- `handoff_at` timestamptz
+- `briefing` jsonb — `{ nome, marca, segmento, pacote, valor, prazo, observacoes, pix_pago }`
+
+### Lógica no `sales-agent`
+
+No início da função, se `handoff_status != 'luna'`:
+- Salva mensagem inbound, **NÃO chama LLM**, **não responde**, só dispara push pra você.
+
+Quando Luna detectar fechamento (cliente diz "paguei", manda comprovante, ou confirma pacote):
+1. Chamada extra ao LLM pedindo JSON estruturado de briefing.
+2. Salva em `conversations.briefing`, muda `handoff_status='ceo_pending'`.
+3. Última mensagem ao cliente: *"Perfeito! Vou te conectar com o André, nosso diretor criativo, que cuida pessoalmente da execução. Ele te chama em instantes por aqui mesmo."*
+
+### Endpoints novos (edge functions)
+
+- **`conversation-takeover`** — body: `{ conversation_id, action: 'assume' | 'release' }`. Muda status para `ceo_active` ou volta pra `luna`. Protegido por `adminPassword`.
+- **`conversation-send-message`** — body: `{ conversation_id, content, adminPassword }`. Manda via Twilio (`whatsapp-send`), grava como `outbound`/`message_type='ceo'`. Se `handoff_status='ceo_pending'`, vira `ceo_active` automaticamente.
+
+---
+
+## Parte 3 — UI Admin (já vira app)
+
+### `ConversationsTab` — nova seção topo
+
+**🔥 Aguardando você (`ceo_pending`)**: cards com nome, marca, pacote, valor, briefing completo formatado, botões **"Assumir conversa"** e **"Abrir chat"**.
+
+### Tela da conversa
+
+- Badge mostrando quem está respondendo (Luna / Você / Pendente).
+- Botão **"Assumir"** (se `luna` ou `ceo_pending`) e **"Devolver pra Luna"** (se `ceo_active`).
+- Campo de input + Send (já existe parcialmente) chamando `conversation-send-message`.
+
+### Nova aba **"Briefings"** (opcional, mas leve)
+
+Lista todas as conversas com briefing preenchido, filtro por status (pendente / em atendimento / concluído).
+
+---
+
+## Parte 4 — App mobile (Capacitor) + notificações
+
+`capacitor.config.ts` já existe. Notifications lib já existe (`src/lib/notifications.ts`).
+
+### Realtime → Local Notifications
+
+Migration: habilitar realtime em `leads`, `conversations`, `conversation_messages`.
+
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.conversation_messages;
+```
+
+No `Admin.tsx` (após login), abrir um channel global escutando:
+- INSERT em `leads` → push *"🌱 Novo lead: {nome}"*
+- INSERT em `conversations` → push *"💬 Nova conversa: {whatsapp}"*
+- INSERT em `conversation_messages` com `direction='inbound'` → push *"✉️ {whatsapp}: {prévia}"*
+- UPDATE em `conversations` com `handoff_status='ceo_pending'` → push *"🎯 Cliente fechado — briefing pronto"*
+
+Local notifications (grátis, sem servidor de push). Funciona com app aberto/background recente. Quando precisar de push com app fechado, migramos pra FCM depois.
+
+### Build mobile
+
+Você roda no seu lado quando quiser:
+1. Export to GitHub → `git pull`
+2. `npm install`
+3. `npx cap add android` (e/ou `ios`)
+4. `npx cap sync`
+5. `npx cap run android`
+
+Custo: **R$ 0** Android (APK direto no celular). iOS pede Mac + Apple Developer (US$99/ano) — pula por enquanto.
+
+---
+
+## Fluxo final
 
 ```
-LINKS DE PAGAMENTO — SERVIÇOS (Stripe):
-- Essencial R$ 97 → [link gerado]
-- Impacto R$ 247 → [link gerado]
-- Campanha Completa R$ 497 → [link gerado]
-
-Para combinações customizadas (qualquer outra qty de foto/vídeo):
-chame a tool generate_custom_payment_link com photos_qty, videos_qty,
-customer_email e customer_name. A função retorna a URL para você enviar.
+Lead entra ─────────────► 🔔 push "Novo lead"
+        │
+Luna conversa, qualifica
+        │
+Cliente escolhe pacote ──► Luna manda link Kiwify
+   ou personalizado ─────► Luna manda Pix 05894688396
+        │
+Cliente paga, manda comprovante
+        │
+Luna gera briefing JSON
+muda handoff_status=ceo_pending
+        │
+        ▼
+🔔 push "🎯 Cliente fechado: {nome} — briefing pronto"
+        │
+Você abre o app, lê briefing,
+clica "Assumir conversa"
+        │
+Luna trava. Você responde pelo app.
+Cliente vê tudo no mesmo número WhatsApp.
 ```
 
-E adicionar tool-calling no payload do LLM (já usa Lovable AI Gateway, suporta tools) para `generate_custom_payment_link`.
-
-### 4. Resposta direta à sua pergunta — o que a Luna **já consegue passar hoje**
-
-Apenas estes dois links (educacionais Kiwify):
-- Pack Editorial R$ 37: `https://pay.kiwify.com.br/SLgYyHP`
-- Curso Velora R$ 497: `https://pay.kiwify.com.br/G0oqvsb`
-
-**Nenhum link de serviço.** É exatamente isso que o plano resolve.
+---
 
 ## Arquivos
 
-- **Novo:** `supabase/functions/create-custom-payment-link/index.ts`
-- **Editar:** `supabase/functions/sales-agent/index.ts` (adicionar links + tool-calling)
-- **Editar:** `supabase/config.toml` (registrar nova função com `verify_jwt = false`)
-- **Stripe (via tool):** criar 3 produtos + payment links
+**Migration:**
+- Adicionar colunas em `conversations`
+- Habilitar realtime nas 3 tabelas
+
+**Editar:**
+- `supabase/functions/sales-agent/index.ts` (links Kiwify, regra Pix, regra link clicável, gate handoff, gerar briefing)
+- `src/components/admin/ConversationsTab.tsx` (seção pendentes, botões assumir/devolver, badges)
+- `src/pages/Admin.tsx` (subscribe realtime + dispara notificações)
+
+**Criar:**
+- `supabase/functions/conversation-takeover/index.ts`
+- `supabase/functions/conversation-send-message/index.ts`
+- Atualizar `supabase/config.toml` com as 2 novas funções
+
+**Não tocar:** prompt comportamental da Luna (você reescreve fora), Stripe.

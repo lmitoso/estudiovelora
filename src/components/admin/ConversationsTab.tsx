@@ -16,6 +16,9 @@ type Conversation = {
   context_summary: string | null;
   last_message_at: string | null;
   created_at: string;
+  handoff_status?: string | null;
+  handoff_at?: string | null;
+  briefing?: any;
   leads: { name: string; email: string } | null;
   conversation_messages: { count: number }[];
 };
@@ -42,6 +45,12 @@ const statusColors: Record<string, string> = {
   negotiating: "bg-purple-500/20 text-purple-400 border-purple-500/30",
   closed_won: "bg-primary/20 text-primary border-primary/30",
   closed_lost: "bg-destructive/20 text-destructive border-destructive/30",
+};
+
+const handoffBadge: Record<string, { label: string; cls: string }> = {
+  luna: { label: "🤖 Luna", cls: "bg-blue-500/15 text-blue-300 border-blue-500/30" },
+  ceo_pending: { label: "🔥 Aguardando você", cls: "bg-amber-500/20 text-amber-300 border-amber-500/40" },
+  ceo_active: { label: "👤 Você ativo", cls: "bg-primary/20 text-primary border-primary/40" },
 };
 
 // Mapeia SIDs de templates Twilio aprovados para descrições humanizadas
@@ -192,6 +201,7 @@ export default function ConversationsTab({ password }: { password: string }) {
 
   const sendManualMessage = async () => {
     if (!draft.trim() || !selectedConv || !selectedConvData) return;
+    const isCeoActive = selectedConvData.handoff_status === "ceo_active" || selectedConvData.handoff_status === "ceo_pending";
     if (!within24h) {
       toast({
         title: "Janela de 24h expirada",
@@ -202,20 +212,36 @@ export default function ConversationsTab({ password }: { password: string }) {
     }
     setSending(true);
     try {
-      const res = await supabase.functions.invoke("whatsapp-send", {
-        body: {
-          to: selectedConvData.whatsapp_number,
-          body: draft.trim(),
-          conversationId: selectedConv,
-        },
-      });
+      // Se você assumiu, manda pela função CEO (que silencia a Luna). Senão, fluxo padrão.
+      const fnName = isCeoActive ? "conversation-send-message" : "whatsapp-send";
+      const body = isCeoActive
+        ? { adminPassword: password, conversationId: selectedConv, content: draft.trim() }
+        : { to: selectedConvData.whatsapp_number, body: draft.trim(), conversationId: selectedConv };
+      const res = await supabase.functions.invoke(fnName, { body });
       if (res.error) throw res.error;
       setDraft("");
       fetchMessages(selectedConv);
+      fetchConversations();
     } catch (err: any) {
       toast({ title: "Erro ao enviar mensagem", description: err.message, variant: "destructive" });
     } finally {
       setSending(false);
+    }
+  };
+
+  const toggleHandoff = async (action: "assume" | "release") => {
+    if (!selectedConv) return;
+    try {
+      const res = await supabase.functions.invoke("conversation-takeover", {
+        body: { adminPassword: password, conversationId: selectedConv, action },
+      });
+      if (res.error) throw res.error;
+      toast({
+        title: action === "assume" ? "Você assumiu a conversa" : "Conversa devolvida pra Luna",
+      });
+      fetchConversations();
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
     }
   };
 
@@ -239,8 +265,22 @@ export default function ConversationsTab({ password }: { password: string }) {
               <Badge className={`text-[10px] ${statusColors[selectedConvData.status] || ""}`}>
                 {selectedConvData.status.replace("_", " ")}
               </Badge>
+              {(() => {
+                const h = selectedConvData.handoff_status || "luna";
+                const b = handoffBadge[h] || handoffBadge.luna;
+                return <Badge className={`text-[10px] ${b.cls}`}>{b.label}</Badge>;
+              })()}
             </div>
           </div>
+          {(selectedConvData.handoff_status === "luna" || selectedConvData.handoff_status === "ceo_pending") ? (
+            <Button variant="default" size="sm" className="h-8" onClick={() => toggleHandoff("assume")}>
+              Assumir
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" className="h-8" onClick={() => toggleHandoff("release")}>
+              Devolver pra Luna
+            </Button>
+          )}
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={exportConversationCsv} title="Exportar conversa">
             <Download className="h-3.5 w-3.5" />
           </Button>
@@ -248,6 +288,21 @@ export default function ConversationsTab({ password }: { password: string }) {
             <RefreshCw className={`h-3.5 w-3.5 ${messagesLoading ? "animate-spin" : ""}`} />
           </Button>
         </div>
+
+        {selectedConvData.briefing && (
+          <div className="bg-amber-500/5 border-b border-amber-500/30 px-4 py-3 text-xs space-y-1">
+            <p className="text-[10px] uppercase tracking-wider text-amber-300 font-semibold mb-1">📋 Briefing do cliente</p>
+            {Object.entries(selectedConvData.briefing).map(([k, v]) => {
+              if (v === "" || v === null || v === undefined || v === false) return null;
+              return (
+                <p key={k} className="text-muted-foreground">
+                  <span className="text-foreground/80 capitalize">{k.replace(/_/g, " ")}:</span>{" "}
+                  {typeof v === "boolean" ? "Sim" : String(v)}
+                </p>
+              );
+            })}
+          </div>
+        )}
 
         <ScrollArea className="flex-1 p-4">
           {messagesLoading && selectedMessages.length === 0 ? (
@@ -344,6 +399,35 @@ export default function ConversationsTab({ password }: { password: string }) {
           <p className="text-xs mt-1">As conversas aparecerão aqui quando leads responderem no WhatsApp.</p>
         </div>
       ) : (
+        <>
+        {(() => {
+          const pending = conversations.filter((c) => c.handoff_status === "ceo_pending");
+          if (pending.length === 0) return null;
+          return (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 space-y-3 mb-3">
+              <p className="text-xs font-semibold text-amber-300 uppercase tracking-wider">
+                🔥 Aguardando você ({pending.length})
+              </p>
+              <div className="grid gap-2">
+                {pending.map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() => openConversation(c.id)}
+                    className="bg-card border border-amber-500/30 rounded-md p-3 cursor-pointer hover:border-amber-500/60 transition-colors"
+                  >
+                    <p className="font-medium text-sm">{c.leads?.name || c.whatsapp_number}</p>
+                    {c.briefing && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {c.briefing.pacote || ""}{c.briefing.valor ? ` · ${c.briefing.valor}` : ""}{c.briefing.marca ? ` · ${c.briefing.marca}` : ""}
+                      </p>
+                    )}
+                    <p className="text-[10px] text-amber-300 mt-1">Toque para abrir e assumir</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
         <div className="grid gap-3">
           {conversations.map((conv) => {
             const msgCount = conv.conversation_messages?.[0]?.count || 0;
@@ -394,6 +478,7 @@ export default function ConversationsTab({ password }: { password: string }) {
             );
           })}
         </div>
+        </>
       )}
     </div>
   );

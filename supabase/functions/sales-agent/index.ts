@@ -42,29 +42,41 @@ Pacote Essencial — R$ 97
 - Direção de arte básica
 - Entrega em até 48h úteis
 → Use para: quem quer testar, marcas menores, primeira compra
-→ Link de pagamento: https://buy.stripe.com/test_5kQaEQ5IF1pJ0z25mX0gw00
+→ Link de pagamento: https://pay.kiwify.com.br/8OjgeBH
 
 Pacote Impacto — R$ 247 (mais vendido)
 - 5 fotos editoriais + 2 vídeos curtos (reels/stories)
 - Direção de arte personalizada
 - Entrega em até 48h úteis
 → Use para: lançamentos, campanhas sazonais, quem precisa de foto + vídeo
-→ Link de pagamento: https://buy.stripe.com/test_28E4gs5IF2tN81u02D0gw01
+→ Link de pagamento: https://pay.kiwify.com.br/HLTtg0k
 
 Pacote Campanha Completa — R$ 497
 - 10 fotos editoriais + 5 vídeos curtos
 - Direção criativa completa com moodboard
 - Prioridade de entrega 24-48h
 → Use para: marcas consolidadas, presença visual consistente, grandes lançamentos
-→ Link de pagamento: https://buy.stripe.com/test_4gM5kwb2Z4BVdlO02D0gw02
+→ Link de pagamento: https://pay.kiwify.com.br/KKZmrag
 
-Avulso / Combinação customizada:
+IMPORTANTE — sempre que enviar QUALQUER link de pagamento, inclua na mesma mensagem (ou logo em seguida) este aviso:
+"Se o link não estiver clicável (azul), salve o nosso contato na sua agenda — o WhatsApp libera o clique automaticamente em links de quem está salvo."
+
+Avulso / Orçamento personalizado (qualquer combinação fora dos 3 pacotes acima):
 - Foto editorial: R$ 29,90 cada
 - Vídeo curto: R$ 49,90 cada
-→ Use para: complementar pacote, pedido pontual, qualquer combinação fora dos 3 pacotes acima
-→ IMPORTANTE: para gerar link de pagamento de combinação custom (ex: 4 fotos + 1 vídeo, 20 fotos, etc),
-   chame a tool generate_custom_payment_link com: photos_qty, videos_qty, customer_email, customer_name.
-   A tool retorna a URL Stripe que você envia ao cliente.
+
+→ COMO COBRAR ORÇAMENTO PERSONALIZADO (NOVA REGRA):
+   No momento NÃO existe link de cartão para personalizados. O pagamento é APENAS por Pix.
+   1. Calcule o valor (qtd_fotos × 29,90 + qtd_videos × 49,90).
+   2. Confirme com o cliente o valor total e o que está incluso.
+   3. Envie esta mensagem (adapte o valor):
+      "Para orçamentos personalizados, no momento o pagamento é só por Pix.
+      Chave Pix (CPF): 05894688396
+      Titular: André Velora
+      Valor: R$ [valor]
+      Assim que pagar, me manda o comprovante por aqui que já abro o briefing.
+      ⚡ Nos próximos dias liberamos pagamento com cartão também."
+   4. NÃO use a tool generate_custom_payment_link (Stripe está desativado nesta fase).
 
 PRODUTOS EDUCACIONAIS (para quem quer aprender a criar):
 
@@ -315,6 +327,15 @@ serve(async (req) => {
       });
     }
 
+    // HANDOFF GATE: se já entregou para o CEO, Luna não responde mais.
+    if (conversation.handoff_status && conversation.handoff_status !== "luna") {
+      console.log(`[sales-agent] handoff=${conversation.handoff_status} → silenciada (conv ${conversationId})`);
+      return new Response(
+        JSON.stringify({ skipped: true, reason: "handoff_active", handoff_status: conversation.handoff_status }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Get recent message history (last 20 messages)
     const { data: messages } = await supabase
       .from("conversation_messages")
@@ -383,23 +404,6 @@ serve(async (req) => {
         ],
         max_tokens: 500,
         temperature: 0.7,
-        tools: [{
-          type: "function",
-          function: {
-            name: "generate_custom_payment_link",
-            description: "Gera link de pagamento Stripe para combinação custom de fotos/vídeos avulsos (qualquer combinação fora dos 3 pacotes fixos). Use APENAS quando o cliente pedir uma quantidade que não bate com Essencial/Impacto/Campanha Completa.",
-            parameters: {
-              type: "object",
-              properties: {
-                photos_qty: { type: "integer", description: "Quantidade de fotos editoriais" },
-                videos_qty: { type: "integer", description: "Quantidade de vídeos curtos" },
-                customer_email: { type: "string", description: "Email do cliente (do lead)" },
-                customer_name: { type: "string", description: "Nome do cliente ou marca" },
-              },
-              required: ["photos_qty", "videos_qty", "customer_email"],
-            },
-          },
-        }],
       }),
     });
 
@@ -409,42 +413,6 @@ serve(async (req) => {
     }
 
     let reply = aiData.choices?.[0]?.message?.content || "";
-    const toolCalls = aiData.choices?.[0]?.message?.tool_calls;
-
-    // Handle tool call: generate custom payment link
-    if (toolCalls && toolCalls.length > 0) {
-      const tc = toolCalls[0];
-      if (tc.function?.name === "generate_custom_payment_link") {
-        try {
-          const args = JSON.parse(tc.function.arguments || "{}");
-          if (!args.customer_email) args.customer_email = lead?.email;
-          if (!args.customer_name) args.customer_name = lead?.name;
-          args.whatsapp = lead?.whatsapp || conversation.whatsapp_number;
-
-          const linkRes = await fetch(
-            `${Deno.env.get("SUPABASE_URL")}/functions/v1/create-custom-payment-link`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-              },
-              body: JSON.stringify(args),
-            }
-          );
-          const linkData = await linkRes.json();
-          if (linkData.url) {
-            reply = `Pronto. Para ${args.photos_qty} foto(s) + ${args.videos_qty} vídeo(s), o valor é R$ ${linkData.price.toFixed(2).replace(".", ",")}.\n\nSegue o link de pagamento:\n${linkData.url}\n\nAssim que confirmar, já começamos o briefing.`;
-          } else {
-            reply = "Tive um probleminha para gerar o link agora. Pode me confirmar a quantidade de fotos e vídeos que deseja?";
-          }
-        } catch (e) {
-          console.error("tool call error:", e);
-          reply = "Tive um probleminha para gerar o link agora. Pode me confirmar a quantidade de fotos e vídeos que deseja?";
-        }
-      }
-    }
-
     if (!reply) reply = "Desculpe, não consegui processar sua mensagem. Vou encaminhar para nossa equipe.";
 
     // Update context summary with AI (lightweight)
@@ -464,26 +432,99 @@ serve(async (req) => {
       if (conversation.stage === "proposal") newStage = "closing";
     }
 
-    // Update conversation
-    await supabase
-      .from("conversations")
-      .update({
-        context_summary: newSummary.substring(0, 2000),
-        stage: newStage,
-        status: conversation.status === "new" ? "active" : conversation.status,
-        last_message_at: new Date().toISOString(),
-        next_follow_up_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(), // 4h follow-up
-      })
-      .eq("id", conversationId);
+    // ════════════════════════════════════════════
+    // DETECTAR FECHAMENTO → GERAR BRIEFING → HANDOFF
+    // ════════════════════════════════════════════
+    // Heurística: cliente sinaliza pagamento OU manda comprovante OU confirma fechamento.
+    const closingSignals = [
+      "paguei", "pago", "pagamento feito", "ja paguei", "já paguei",
+      "comprovante", "transferi", "fiz o pix", "fiz pix", "pix feito",
+      "fechado", "pode mandar", "vamos fechar", "fechei",
+    ];
+    const isMediaInbound = inboundMessage.startsWith("[mídia") || inboundMessage.startsWith("[image") || inboundMessage.startsWith("[media");
+    const looksLikePayment = closingSignals.some((kw) => lowerMsg.includes(kw)) || (isMediaInbound && conversation.stage === "closing");
 
-    // Schedule follow-up if needed
-    if (newStage !== "closing") {
-      await supabase.from("follow_up_schedule").insert({
-        conversation_id: conversationId,
-        scheduled_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
-        type: "check_in",
-        message_content: null, // Will be generated at send time
-      });
+    let didHandoff = false;
+    if (looksLikePayment) {
+      try {
+        const briefingPrompt = `Você é um assistente que extrai dados estruturados de conversas de venda.
+Com base na conversa abaixo entre Luna (vendedora da Velora) e o cliente, gere APENAS um JSON válido (sem markdown, sem texto antes/depois) com este schema:
+{
+  "nome": string,
+  "marca": string,
+  "segmento": string,
+  "pacote": string,         // "Essencial" | "Impacto" | "Campanha Completa" | "Personalizado"
+  "valor": string,           // ex: "R$ 247"
+  "prazo": string,           // ex: "48h", "urgente"
+  "publico_alvo": string,
+  "referencias": string,     // estilos/marcas que citou
+  "objetivo": string,        // o que vai usar/lançar
+  "pix_pago": boolean,       // true se cliente confirmou pagamento
+  "observacoes": string      // qualquer detalhe extra relevante
+}
+Se algum campo não for conhecido, use "" (string vazia) ou false (boolean).
+
+Conversa:
+${conversationHistoryStr}
+Lead: ${inboundMessage}
+`;
+        const briefingRes = await fetch(AI_GATEWAY_URL, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [{ role: "user", content: briefingPrompt }],
+            max_tokens: 600,
+            temperature: 0.2,
+          }),
+        });
+        const briefingData = await briefingRes.json();
+        const rawBriefing = briefingData.choices?.[0]?.message?.content || "";
+        // Extrair JSON (remove eventual cerca markdown)
+        const jsonMatch = rawBriefing.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const briefing = JSON.parse(jsonMatch[0]);
+          await supabase
+            .from("conversations")
+            .update({
+              briefing,
+              handoff_status: "ceo_pending",
+              handoff_at: new Date().toISOString(),
+              status: "closed_won",
+              stage: "closing",
+            })
+            .eq("id", conversationId);
+          didHandoff = true;
+          // Substitui resposta da Luna pela mensagem de handoff
+          reply = `Perfeito! ${briefing.nome ? briefing.nome.split(" ")[0] : ""}, vou te conectar agora com o André, nosso diretor criativo, que cuida pessoalmente da execução. Ele te chama por aqui em instantes 🤝`;
+        }
+      } catch (e) {
+        console.error("[sales-agent] briefing generation failed:", e);
+      }
+    }
+
+    // Update conversation (skip se acabamos de fazer handoff — já foi atualizado acima)
+    if (!didHandoff) {
+      await supabase
+        .from("conversations")
+        .update({
+          context_summary: newSummary.substring(0, 2000),
+          stage: newStage,
+          status: conversation.status === "new" ? "active" : conversation.status,
+          last_message_at: new Date().toISOString(),
+          next_follow_up_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
+        })
+        .eq("id", conversationId);
+
+      // Schedule follow-up if needed
+      if (newStage !== "closing") {
+        await supabase.from("follow_up_schedule").insert({
+          conversation_id: conversationId,
+          scheduled_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
+          type: "check_in",
+          message_content: null,
+        });
+      }
     }
 
     return new Response(JSON.stringify({ reply, stage: newStage }), {
