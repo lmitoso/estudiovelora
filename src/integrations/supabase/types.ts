@@ -57,6 +57,7 @@ export type Database = {
           briefing: Json | null
           context_summary: string | null
           created_at: string
+          followup_base_at: string | null
           followup_step: number
           handoff_at: string | null
           handoff_status: string
@@ -75,6 +76,7 @@ export type Database = {
           briefing?: Json | null
           context_summary?: string | null
           created_at?: string
+          followup_base_at?: string | null
           followup_step?: number
           handoff_at?: string | null
           handoff_status?: string
@@ -93,6 +95,7 @@ export type Database = {
           briefing?: Json | null
           context_summary?: string | null
           created_at?: string
+          followup_base_at?: string | null
           followup_step?: number
           handoff_at?: string | null
           handoff_status?: string
