@@ -432,6 +432,77 @@ serve(async (req) => {
       if (conversation.stage === "proposal") newStage = "closing";
     }
 
+    // ════════════════════════════════════════════
+    // DETECTAR FECHAMENTO → GERAR BRIEFING → HANDOFF
+    // ════════════════════════════════════════════
+    // Heurística: cliente sinaliza pagamento OU manda comprovante OU confirma fechamento.
+    const closingSignals = [
+      "paguei", "pago", "pagamento feito", "ja paguei", "já paguei",
+      "comprovante", "transferi", "fiz o pix", "fiz pix", "pix feito",
+      "fechado", "pode mandar", "vamos fechar", "fechei",
+    ];
+    const isMediaInbound = inboundMessage.startsWith("[mídia") || inboundMessage.startsWith("[image") || inboundMessage.startsWith("[media");
+    const looksLikePayment = closingSignals.some((kw) => lowerMsg.includes(kw)) || (isMediaInbound && conversation.stage === "closing");
+
+    let didHandoff = false;
+    if (looksLikePayment) {
+      try {
+        const briefingPrompt = `Você é um assistente que extrai dados estruturados de conversas de venda.
+Com base na conversa abaixo entre Luna (vendedora da Velora) e o cliente, gere APENAS um JSON válido (sem markdown, sem texto antes/depois) com este schema:
+{
+  "nome": string,
+  "marca": string,
+  "segmento": string,
+  "pacote": string,         // "Essencial" | "Impacto" | "Campanha Completa" | "Personalizado"
+  "valor": string,           // ex: "R$ 247"
+  "prazo": string,           // ex: "48h", "urgente"
+  "publico_alvo": string,
+  "referencias": string,     // estilos/marcas que citou
+  "objetivo": string,        // o que vai usar/lançar
+  "pix_pago": boolean,       // true se cliente confirmou pagamento
+  "observacoes": string      // qualquer detalhe extra relevante
+}
+Se algum campo não for conhecido, use "" (string vazia) ou false (boolean).
+
+Conversa:
+${conversationHistoryStr}
+Lead: ${inboundMessage}
+`;
+        const briefingRes = await fetch(AI_GATEWAY_URL, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [{ role: "user", content: briefingPrompt }],
+            max_tokens: 600,
+            temperature: 0.2,
+          }),
+        });
+        const briefingData = await briefingRes.json();
+        const rawBriefing = briefingData.choices?.[0]?.message?.content || "";
+        // Extrair JSON (remove eventual cerca markdown)
+        const jsonMatch = rawBriefing.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const briefing = JSON.parse(jsonMatch[0]);
+          await supabase
+            .from("conversations")
+            .update({
+              briefing,
+              handoff_status: "ceo_pending",
+              handoff_at: new Date().toISOString(),
+              status: "closed_won",
+              stage: "closing",
+            })
+            .eq("id", conversationId);
+          didHandoff = true;
+          // Substitui resposta da Luna pela mensagem de handoff
+          reply = `Perfeito! ${briefing.nome ? briefing.nome.split(" ")[0] : ""}, vou te conectar agora com o André, nosso diretor criativo, que cuida pessoalmente da execução. Ele te chama por aqui em instantes 🤝`;
+        }
+      } catch (e) {
+        console.error("[sales-agent] briefing generation failed:", e);
+      }
+    }
+
     // Update conversation
     await supabase
       .from("conversations")
