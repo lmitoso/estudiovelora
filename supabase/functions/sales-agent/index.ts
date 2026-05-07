@@ -503,26 +503,28 @@ Lead: ${inboundMessage}
       }
     }
 
-    // Update conversation
-    await supabase
-      .from("conversations")
-      .update({
-        context_summary: newSummary.substring(0, 2000),
-        stage: newStage,
-        status: conversation.status === "new" ? "active" : conversation.status,
-        last_message_at: new Date().toISOString(),
-        next_follow_up_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(), // 4h follow-up
-      })
-      .eq("id", conversationId);
+    // Update conversation (skip se acabamos de fazer handoff — já foi atualizado acima)
+    if (!didHandoff) {
+      await supabase
+        .from("conversations")
+        .update({
+          context_summary: newSummary.substring(0, 2000),
+          stage: newStage,
+          status: conversation.status === "new" ? "active" : conversation.status,
+          last_message_at: new Date().toISOString(),
+          next_follow_up_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
+        })
+        .eq("id", conversationId);
 
-    // Schedule follow-up if needed
-    if (newStage !== "closing") {
-      await supabase.from("follow_up_schedule").insert({
-        conversation_id: conversationId,
-        scheduled_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
-        type: "check_in",
-        message_content: null, // Will be generated at send time
-      });
+      // Schedule follow-up if needed
+      if (newStage !== "closing") {
+        await supabase.from("follow_up_schedule").insert({
+          conversation_id: conversationId,
+          scheduled_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
+          type: "check_in",
+          message_content: null,
+        });
+      }
     }
 
     return new Response(JSON.stringify({ reply, stage: newStage }), {
