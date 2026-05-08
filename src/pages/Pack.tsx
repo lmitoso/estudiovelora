@@ -1,171 +1,835 @@
 import { useEffect } from "react";
-import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-import { Check, ArrowRight } from "lucide-react";
-import { fbqTrack } from "@/lib/metaPixel";
 
-const PACK_URL = "https://pay.kiwify.com.br/SLgYyHP";
-const COURSE_URL = "https://pay.kiwify.com.br/G0oqvsb";
+const STYLE = `
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-const bullets = [
-  "5 categorias de campanha",
-  "Uso imediato — sem curva de aprendizado",
-  "[produto] destacado em cada prompt",
-  "Entrega automática após o pagamento",
-];
+:root {
+  --bg: #080808;
+  --bg2: #121212;
+  --bg3: #0a0a0a;
+  --gold: #C9A96E;
+  --gold-dim: rgba(201, 169, 110, 0.15);
+  --text: #E0E0E0;
+  --text-muted: #888888;
+  --white: #FAFAF7;
+  --serif: 'Cormorant Garamond', Georgia, serif;
+  --sans: 'Raleway', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-weight: 300; line-height: 1.7; -webkit-font-smoothing: antialiased; }
+
+a { color: var(--gold); text-decoration: none; }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+/* ===== HERO ===== */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero-bg {
+  position: absolute; inset: 0;
+  background: url('/images/pack/hero.png') center/cover no-repeat;
+  opacity: 0.25;
+  filter: blur(1px);
+}
+.hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(8,8,8,0.95) 0%, rgba(8,8,8,0.6) 100%);
+}
+.hero-content {
+  position: relative; z-index: 2;
+  max-width: 680px;
+  padding: 80px 0;
+}
+.hero-tag {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 24px;
+}
+.hero h1 {
+  font-family: var(--serif);
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 300;
+  color: var(--white);
+  line-height: 1.15;
+  margin-bottom: 24px;
+}
+.hero h1 span { color: var(--gold); }
+.hero p {
+  font-size: 16px;
+  color: var(--text);
+  max-width: 540px;
+  margin-bottom: 40px;
+  line-height: 1.8;
+}
+.cta {
+  display: inline-block;
+  background: var(--gold);
+  color: #080808;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 18px 48px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.cta:hover { background: #d4b87a; transform: translateY(-1px); }
+
+/* ===== CONTRASTE ===== */
+.contrast {
+  background: var(--bg2);
+  padding: 100px 0;
+}
+.contrast-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+.contrast h2 {
+  font-family: var(--serif);
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 300;
+  color: var(--white);
+  margin-bottom: 32px;
+  line-height: 1.2;
+}
+.cost-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-size: 15px;
+}
+.cost-item .label { color: var(--text-muted); }
+.cost-item .value { color: var(--text); font-weight: 400; }
+.cost-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 0;
+  margin-top: 8px;
+  border-top: 1px solid var(--gold);
+  font-size: 17px;
+  font-weight: 500;
+}
+.cost-total .value { color: var(--gold); }
+.contrast-right {
+  text-align: center;
+}
+.contrast-price {
+  font-family: var(--serif);
+  font-size: 72px;
+  font-weight: 300;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.contrast-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.contrast-note {
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 32px;
+}
+
+/* ===== SHOWCASE ===== */
+.showcase {
+  padding: 100px 0;
+  background: var(--bg);
+}
+.section-tag {
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+.section-title {
+  font-family: var(--serif);
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 300;
+  color: var(--white);
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+.section-sub {
+  font-size: 15px;
+  color: var(--text-muted);
+  margin-bottom: 48px;
+  max-width: 500px;
+}
+.grid-showcase {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.grid-showcase img {
+  width: 100%;
+  height: 360px;
+  object-fit: cover;
+  border-radius: 4px;
+  transition: transform 0.4s ease;
+}
+.grid-showcase img:hover { transform: scale(1.02); }
+
+/* ===== PRODUTO ===== */
+.product {
+  padding: 100px 0;
+  background: var(--bg2);
+}
+.product-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.product h2 {
+  font-family: var(--serif);
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 300;
+  color: var(--white);
+  margin-bottom: 24px;
+}
+.product-intro {
+  font-size: 15px;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+}
+.category {
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.category-num {
+  font-family: var(--serif);
+  font-size: 24px;
+  color: var(--gold);
+  display: inline;
+  margin-right: 12px;
+}
+.category-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--white);
+}
+.category-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  padding-left: 36px;
+}
+.product-highlight {
+  margin-top: 32px;
+  padding: 20px 24px;
+  background: var(--gold-dim);
+  border-left: 2px solid var(--gold);
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.7;
+}
+.mockup-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mockup-visual {
+  background: var(--bg3);
+  border: 1px solid rgba(201,169,110,0.2);
+  border-radius: 8px;
+  padding: 48px 40px;
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+}
+.mockup-tag {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.mockup-title {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 300;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+.mockup-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+.mockup-line {
+  width: 40px;
+  height: 1px;
+  background: var(--gold);
+  margin: 0 auto 24px;
+}
+.mockup-cats {
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 2;
+}
+.mockup-cats span { color: var(--gold); margin-right: 8px; }
+
+/* ===== COMO FUNCIONA ===== */
+.how {
+  padding: 100px 0;
+  background: var(--bg);
+}
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 48px;
+  margin-top: 48px;
+}
+.step-num {
+  font-family: var(--serif);
+  font-size: 48px;
+  color: var(--gold);
+  opacity: 0.6;
+  margin-bottom: 12px;
+}
+.step-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+.step-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+/* ===== BONUS ===== */
+.bonus {
+  padding: 100px 0;
+  background: var(--bg2);
+}
+.bonus-card {
+  max-width: 700px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 60px 48px;
+  border: 1px solid rgba(201,169,110,0.2);
+  border-radius: 4px;
+}
+.bonus-tag {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+.bonus h2 {
+  font-family: var(--serif);
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 300;
+  color: var(--white);
+  margin-bottom: 20px;
+}
+.bonus p {
+  font-size: 15px;
+  color: var(--text-muted);
+  max-width: 520px;
+  margin: 0 auto 20px;
+  line-height: 1.8;
+}
+.bonus-items {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+.bonus-item {
+  font-size: 13px;
+  color: var(--gold);
+  padding: 8px 20px;
+  border: 1px solid rgba(201,169,110,0.3);
+  border-radius: 24px;
+}
+
+/* ===== PROVA SOCIAL ===== */
+.proof {
+  padding: 100px 0;
+  background: var(--bg);
+}
+.proof-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 48px;
+}
+.proof-grid img {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* ===== PARA QUEM ===== */
+.for-who {
+  padding: 100px 0;
+  background: var(--bg2);
+}
+.for-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  margin-top: 48px;
+}
+.for-col h3 {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--white);
+  margin-bottom: 20px;
+}
+.for-col h3.no { color: var(--text-muted); }
+.for-item {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 14px;
+  color: var(--text);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.for-item .icon { color: var(--gold); flex-shrink: 0; margin-top: 2px; }
+.for-item.no .icon { color: var(--text-muted); }
+
+/* ===== FAQ ===== */
+.faq {
+  padding: 100px 0;
+  background: var(--bg);
+}
+.faq-list {
+  max-width: 700px;
+  margin: 48px auto 0;
+}
+.faq-item {
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.faq-q {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+.faq-a {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+/* ===== GARANTIA ===== */
+.guarantee {
+  text-align: center;
+  padding: 60px 0;
+  background: var(--bg);
+}
+.guarantee-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+.guarantee h3 {
+  font-family: var(--serif);
+  font-size: 24px;
+  color: var(--white);
+  font-weight: 300;
+  margin-bottom: 8px;
+}
+.guarantee p {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* ===== CTA FINAL ===== */
+.final-cta {
+  padding: 120px 0;
+  background: var(--bg2);
+  text-align: center;
+}
+.final-price-tag {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.final-price {
+  font-family: var(--serif);
+  font-size: clamp(56px, 8vw, 80px);
+  font-weight: 300;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 16px;
+}
+.final-includes {
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.final-bonus {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 40px;
+}
+.final-delivery {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 20px;
+}
+
+/* ===== FOOTER ===== */
+footer {
+  padding: 40px 0;
+  text-align: center;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  background: var(--bg);
+}
+footer p {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ===== DIVIDER ===== */
+.gold-line {
+  width: 40px;
+  height: 1px;
+  background: var(--gold);
+  margin-bottom: 24px;
+}
+.gold-line.center { margin: 0 auto 24px; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .contrast-grid, .product-grid, .for-grid { grid-template-columns: 1fr; }
+  .grid-showcase { grid-template-columns: 1fr 1fr; }
+  .steps { grid-template-columns: 1fr; gap: 32px; }
+  .proof-grid { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; }
+  .hero-content { padding: 120px 0 60px; }
+  .contrast-right { margin-top: 40px; }
+  .bonus-card { padding: 40px 24px; }
+}
+@media (max-width: 480px) {
+  .grid-showcase { grid-template-columns: 1fr; }
+  .grid-showcase img { height: 300px; }
+}
+`;
+const BODY_HTML = `
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="container hero-content">
+    <div class="hero-tag">Velora Studio</div>
+    <h1>50 prompts que criam campanhas de <span>R$ 5.000</span>.<br>Por R$ 37.</h1>
+    <p>Crie imagens para sua marca com atmosfera de luxo, direção de luz profissional e resultado visual indistinguível de uma produção fotográfica tradicional. Sem precisar saber sobre IA.</p>
+    <a href="https://pay.kiwify.com.br/SLgYyHP" class="cta">QUERO ACESSO IMEDIATO</a>
+  </div>
+</section>
+
+<!-- ===== CONTRASTE ===== -->
+<section class="contrast">
+  <div class="container">
+    <div class="contrast-grid">
+      <div>
+        <div class="section-tag">O contraste</div>
+        <h2>O fim das produções caras e demoradas.</h2>
+        <div class="cost-item">
+          <span class="label">Fotógrafo profissional</span>
+          <span class="value">R$ 1.500+</span>
+        </div>
+        <div class="cost-item">
+          <span class="label">Aluguel de estúdio</span>
+          <span class="value">R$ 800+</span>
+        </div>
+        <div class="cost-item">
+          <span class="label">Modelo + maquiagem</span>
+          <span class="value">R$ 1.200+</span>
+        </div>
+        <div class="cost-total">
+          <span class="label">Total por ensaio</span>
+          <span class="value">R$ 3.500 — R$ 5.000</span>
+        </div>
+      </div>
+      <div class="contrast-right">
+        <div class="contrast-label">Pack Editorial Velora</div>
+        <div class="contrast-price">R$ 37</div>
+        <div class="contrast-note">Campanhas ilimitadas. Entrega imediata.</div>
+        <a href="https://pay.kiwify.com.br/SLgYyHP" class="cta">QUERO ACESSO IMEDIATO</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SHOWCASE ===== -->
+<section class="showcase">
+  <div class="container">
+    <div class="section-tag">Resultados reais</div>
+    <div class="section-title">Sua marca com direção de arte internacional.</div>
+    <div class="section-sub">Não é sobre apertar botões. É sobre ter os prompts certos.</div>
+    <div class="grid-showcase">
+      <img src="/images/pack/showcase1.jpg" alt="Campanha editorial bolsa e terno" loading="lazy">
+      <img src="/images/pack/showcase2.jpg" alt="Campanha editorial óculos" loading="lazy">
+      <img src="/images/pack/showcase3.png" alt="Campanha editorial masculina" loading="lazy">
+      <img src="/images/pack/showcase4.png" alt="Campanha editorial praia" loading="lazy">
+      <img src="/images/pack/showcase5.png" alt="Campanha editorial joias" loading="lazy">
+      <img src="/images/pack/showcase6.png" alt="Campanha editorial feminina" loading="lazy">
+    </div>
+  </div>
+</section>
+
+<!-- ===== PRODUTO ===== -->
+<section class="product">
+  <div class="container">
+    <div class="product-grid">
+      <div class="mockup-area">
+        <div class="mockup-visual">
+          <div class="mockup-tag">Pack Editorial</div>
+          <div class="mockup-title">50 Prompts</div>
+          <div class="mockup-sub">Campanhas com IA</div>
+          <div class="mockup-line"></div>
+          <div class="mockup-cats">
+            <span>01</span> Produto no Centro<br>
+            <span>02</span> Modelo com Produto<br>
+            <span>03</span> Campanha Sazonal<br>
+            <span>04</span> Atmosfera e Lifestyle<br>
+            <span>05</span> Direção Criativa Avançada
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="section-tag">O que você recebe</div>
+        <h2>50 prompts organizados em 5 categorias estratégicas.</h2>
+        <div class="product-intro">Cada categoria resolve um tipo diferente de necessidade visual da sua marca.</div>
+        <div class="category">
+          <span class="category-num">01</span>
+          <span class="category-name">Produto no Centro</span>
+          <div class="category-desc">Foco total no item com luz editorial, atmosfera e composição intencional.</div>
+        </div>
+        <div class="category">
+          <span class="category-num">02</span>
+          <span class="category-name">Modelo com Produto</span>
+          <div class="category-desc">Campanhas com figura humana, naturalidade e referências de grandes grifes.</div>
+        </div>
+        <div class="category">
+          <span class="category-num">03</span>
+          <span class="category-name">Campanha Sazonal</span>
+          <div class="category-desc">Dia das Mães, Natal, Black Friday, verão — prompts para cada data que importa.</div>
+        </div>
+        <div class="category">
+          <span class="category-num">04</span>
+          <span class="category-name">Atmosfera e Lifestyle</span>
+          <div class="category-desc">Construa o universo da marca sem mostrar o produto diretamente.</div>
+        </div>
+        <div class="category">
+          <span class="category-num">05</span>
+          <span class="category-name">Direção Criativa Avançada</span>
+          <div class="category-desc">Resultados autorais e conceituais para marcas que querem se diferenciar.</div>
+        </div>
+        <div class="product-highlight">
+          Cada prompt tem a variável <strong>[produto]</strong> destacada. Você só substitui pelo nome do seu produto e gera. Funciona em Midjourney, DALL-E, Firefly, Leonardo e qualquer ferramenta de IA.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== COMO FUNCIONA ===== -->
+<section class="how">
+  <div class="container">
+    <div class="gold-line center"></div>
+    <div style="text-align:center">
+      <div class="section-tag">Como funciona</div>
+      <div class="section-title" style="max-width:500px;margin:0 auto 0;">Três passos. Resultado em minutos.</div>
+    </div>
+    <div class="steps">
+      <div>
+        <div class="step-num">01</div>
+        <div class="step-title">Escolha</div>
+        <div class="step-desc">Selecione o prompt da categoria que faz sentido para o seu objetivo — lançamento, campanha sazonal, conteúdo recorrente.</div>
+      </div>
+      <div>
+        <div class="step-num">02</div>
+        <div class="step-title">Substitua</div>
+        <div class="step-desc">Troque a variável [produto] pelo seu item — seja específico. "Bolsa de couro marrom" funciona melhor que só "bolsa".</div>
+      </div>
+      <div>
+        <div class="step-num">03</div>
+        <div class="step-title">Gere</div>
+        <div class="step-desc">Cole na sua ferramenta de IA favorita — Midjourney, DALL-E, Firefly, Leonardo — e tenha o resultado em segundos.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BÔNUS ===== -->
+<section class="bonus">
+  <div class="container">
+    <div class="bonus-card">
+      <div class="bonus-tag">Bônus especial incluso</div>
+      <h2>Como pensa um diretor de arte para marcas.</h2>
+      <p>Não basta gerar — é preciso saber curar. Receba um guia exclusivo da Velora Studio ensinando a metodologia por trás de cada campanha editorial.</p>
+      <div class="bonus-items">
+        <span class="bonus-item">Luz</span>
+        <span class="bonus-item">Paleta</span>
+        <span class="bonus-item">Cenário</span>
+        <span class="bonus-item">Composição</span>
+        <span class="bonus-item">Expressão</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PROVA SOCIAL ===== -->
+<section class="proof">
+  <div class="container">
+    <div class="gold-line center"></div>
+    <div style="text-align:center">
+      <div class="section-tag">Quem já usa</div>
+      <div class="section-title" style="max-width:500px;margin:0 auto;">O atalho para quem quer resultado.</div>
+    </div>
+    <div class="proof-grid">
+      <img src="/images/pack/proof1.jpg" alt="Depoimento de cliente" loading="lazy">
+      <img src="/images/pack/proof2.jpg" alt="Depoimento de cliente" loading="lazy">
+      <img src="/images/pack/proof3.png" alt="Depoimento Instagram" loading="lazy">
+    </div>
+  </div>
+</section>
+
+<!-- ===== PARA QUEM ===== -->
+<section class="for-who">
+  <div class="container">
+    <div class="gold-line center"></div>
+    <div style="text-align:center">
+      <div class="section-tag">Para quem é</div>
+      <div class="section-title" style="max-width:500px;margin:0 auto;">Feito para quem quer resultado sem complexidade.</div>
+    </div>
+    <div class="for-grid">
+      <div class="for-col">
+        <h3>Para você se:</h3>
+        <div class="for-item"><span class="icon">→</span> Tem uma marca e quer imagens editoriais sem contratar fotógrafo</div>
+        <div class="for-item"><span class="icon">→</span> É criativo ou freelancer e quer atender clientes com IA</div>
+        <div class="for-item"><span class="icon">→</span> Quer resultado rápido sem aprender tudo do zero</div>
+        <div class="for-item"><span class="icon">→</span> Cansou de imagens genéricas que não comunicam valor</div>
+        <div class="for-item"><span class="icon">→</span> Precisa de conteúdo visual consistente com orçamento limitado</div>
+      </div>
+      <div class="for-col">
+        <h3 class="no">Não é para você se:</h3>
+        <div class="for-item no"><span class="icon">—</span> Quer aprender a metodologia completa de direção artística (para isso existe o Curso Velora R$ 497)</div>
+        <div class="for-item no"><span class="icon">—</span> Espera resultado sem nenhum esforço de curadoria</div>
+        <div class="for-item no"><span class="icon">—</span> Não tem interesse em usar ferramentas de IA</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== GARANTIA ===== -->
+<section class="guarantee">
+  <div class="container">
+    <div class="guarantee-icon">◇</div>
+    <h3>7 dias de garantia incondicional.</h3>
+    <p>Se não gostar, devolvemos 100% do valor. Sem perguntas. Risco zero.</p>
+  </div>
+</section>
+
+<!-- ===== FAQ ===== -->
+<section class="faq">
+  <div class="container">
+    <div class="gold-line center"></div>
+    <div style="text-align:center">
+      <div class="section-tag">Dúvidas</div>
+      <div class="section-title" style="max-width:500px;margin:0 auto;">Perguntas frequentes.</div>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">Funciona para o meu nicho?</div>
+        <div class="faq-a">Sim. Cada prompt tem a variável [produto] que você adapta para qualquer tipo de item — moda, beleza, acessórios, decoração, gastronomia, qualquer produto físico.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Preciso saber usar IA?</div>
+        <div class="faq-a">Não. Os prompts já contêm toda a engenharia técnica e direção de arte. Você só copia, substitui [produto] pelo seu e cola na ferramenta.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Como recebo?</div>
+        <div class="faq-a">Acesso imediato em PDF direto no seu e-mail após a compra aprovada. Sem espera.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Funciona em qual ferramenta de IA?</div>
+        <div class="faq-a">Midjourney, DALL-E, Adobe Firefly, Leonardo AI, ou qualquer outra que aceite prompts de texto.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Posso usar para clientes?</div>
+        <div class="faq-a">Sim. Os prompts são seus — use para a sua marca ou para atender marcas como prestador de serviço.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA FINAL ===== -->
+<section class="final-cta">
+  <div class="container">
+    <div class="gold-line center"></div>
+    <div class="final-price-tag">Pack Editorial Velora</div>
+    <div class="final-price">R$ 37</div>
+    <div class="final-includes">50 prompts editoriais + Bônus: Guia de Direção de Arte</div>
+    <div class="final-bonus">Entrega imediata • Garantia de 7 dias • Acesso vitalício</div>
+    <a href="https://pay.kiwify.com.br/SLgYyHP" class="cta">QUERO ACESSO IMEDIATO</a>
+    <div class="final-delivery">Pagamento seguro via Kiwify. Acesso liberado em segundos após a confirmação.</div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="container">
+    <p>© 2026 Velora Studio — estudiovelora.net</p>
+  </div>
+</footer>
+
+`;
 
 const Pack = () => {
-  const navigate = useNavigate();
-
-  // Meta Pixel — ViewContent on /pack mount
   useEffect(() => {
-    fbqTrack("ViewContent", { content_name: "pack", value: 37, currency: "BRL" });
+    // Load fonts
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Raleway:wght@300;400;500;600&display=swap";
+    document.head.appendChild(link);
+    const prevTitle = document.title;
+    document.title = "Pack Editorial Velora — 50 Prompts para Campanhas com IA";
+    return () => {
+      document.head.removeChild(link);
+      document.title = prevTitle;
+    };
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      {/* Nav */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <button
-            onClick={() => navigate("/")}
-            className="font-display text-lg velora-text-gradient tracking-[0.25em]"
-          >
-            VELORA
-          </button>
-          <button onClick={() => navigate("/aprender")} className="velora-btn-ghost">
-            Conhecer o curso
-          </button>
-        </div>
-      </nav>
-
-      {/* Ambient gold */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse at 50% 25%, hsl(var(--gold) / 0.08) 0%, transparent 60%)",
-        }}
-      />
-
-      <main className="relative z-10 pt-36 md:pt-44 pb-24 px-6">
-        <div className="max-w-2xl mx-auto text-center">
-          {/* Tag */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8 }}
-            className="text-xs text-primary font-body tracking-[0.3em] uppercase mb-6"
-          >
-            Estúdio Velora
-          </motion.p>
-
-          {/* Divisor */}
-          <motion.div
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            className="w-20 h-px bg-primary/40 mx-auto mb-10 origin-center"
-          />
-
-          {/* Título */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.8 }}
-            className="font-display text-4xl md:text-6xl velora-text-gradient leading-tight mb-6"
-          >
-            Pack Editorial Velora
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.8 }}
-            className="font-body text-base md:text-lg text-muted-foreground max-w-xl mx-auto mb-14"
-          >
-            50 prompts testados para campanhas editoriais com IA
-          </motion.p>
-
-          {/* Bullets */}
-          <motion.ul
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8, duration: 0.8 }}
-            className="space-y-4 max-w-md mx-auto mb-14 text-left"
-          >
-            {bullets.map((b) => (
-              <li key={b} className="flex items-start gap-3">
-                <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
-                <span className="font-body text-sm md:text-base text-foreground/90">{b}</span>
-              </li>
-            ))}
-          </motion.ul>
-
-          {/* Divisor */}
-          <motion.div
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ delay: 1, duration: 0.8 }}
-            className="w-20 h-px bg-primary/40 mx-auto mb-10 origin-center"
-          />
-
-          {/* Preço */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.1, duration: 0.7 }}
-            className="mb-10"
-          >
-            <p className="font-display text-5xl md:text-6xl velora-text-gradient mb-2">R$ 37</p>
-            <p className="text-xs text-muted-foreground font-body tracking-widest uppercase">
-              Pagamento único · Acesso vitalício
-            </p>
-          </motion.div>
-
-          {/* CTA */}
-          <motion.a
-            href={PACK_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.3, duration: 0.6 }}
-            className="velora-btn-primary velora-glow px-12 py-4 inline-flex items-center gap-3"
-          >
-            Quero o Pack agora
-            <ArrowRight className="h-4 w-4" />
-          </motion.a>
-
-          {/* Linha discreta */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.7 }}
-            transition={{ delay: 1.5, duration: 0.6 }}
-            className="mt-10 text-xs md:text-sm text-muted-foreground font-body"
-          >
-            Quer ir mais fundo?{" "}
-            <a
-              href={COURSE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              Conheça o curso completo por R$ 497
-            </a>
-          </motion.p>
-        </div>
-      </main>
-
-      {/* Rodapé */}
-      <footer className="relative z-10 border-t border-border/40 py-8 px-6 text-center">
-        <p className="text-[11px] text-muted-foreground font-body tracking-[0.25em] uppercase">
-          Estúdio Velora · São Paulo · Brasil
-        </p>
-      </footer>
-    </div>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: STYLE }} />
+      <div dangerouslySetInnerHTML={{ __html: BODY_HTML }} />
+    </>
   );
 };
 
