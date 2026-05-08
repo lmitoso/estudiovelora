@@ -522,18 +522,50 @@ footer p {
 .gold-line.center { margin: 0 auto 24px; }
 
 /* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .container { padding: 0 32px; }
+  .contrast, .showcase, .product, .how, .bonus, .proof, .for-who, .faq { padding: 80px 0; }
+  .final-cta { padding: 90px 0; }
+  .product-grid { gap: 48px; }
+  .grid-showcase img { height: 280px; }
+  .steps { gap: 32px; }
+}
 @media (max-width: 768px) {
-  .contrast-grid, .product-grid, .for-grid { grid-template-columns: 1fr; }
-  .grid-showcase { grid-template-columns: 1fr 1fr; }
-  .steps { grid-template-columns: 1fr; gap: 32px; }
-  .proof-grid { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; }
-  .hero-content { padding: 120px 0 60px; }
-  .contrast-right { margin-top: 40px; }
+  .container { padding: 0 24px; }
+  .contrast-grid, .product-grid, .for-grid { grid-template-columns: 1fr; gap: 40px; }
+  .grid-showcase { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .grid-showcase img { height: 240px; }
+  .steps { grid-template-columns: 1fr; gap: 32px; margin-top: 32px; }
+  .proof-grid { grid-template-columns: 1fr; max-width: 420px; margin-left: auto; margin-right: auto; gap: 16px; }
+  .hero { min-height: auto; }
+  .hero-content { padding: 110px 0 70px; }
+  .hero-overlay { background: linear-gradient(180deg, rgba(8,8,8,0.85) 0%, rgba(8,8,8,0.92) 100%); }
+  .hero p { font-size: 15px; }
+  .contrast, .showcase, .product, .how, .bonus, .proof, .for-who, .faq { padding: 64px 0; }
+  .final-cta { padding: 72px 0; }
+  .contrast-right { margin-top: 32px; }
+  .contrast-price { font-size: 60px; }
   .bonus-card { padding: 40px 24px; }
+  .section-sub { margin-bottom: 36px; }
+  .cta { display: block; width: 100%; padding: 18px 24px; text-align: center; }
 }
 @media (max-width: 480px) {
-  .grid-showcase { grid-template-columns: 1fr; }
-  .grid-showcase img { height: 300px; }
+  .container { padding: 0 20px; }
+  .grid-showcase { grid-template-columns: 1fr; gap: 8px; }
+  .grid-showcase img { height: 320px; }
+  .hero h1 { font-size: 32px; }
+  .hero p { font-size: 14.5px; line-height: 1.7; }
+  .hero-content { padding: 100px 0 60px; }
+  .contrast, .showcase, .product, .how, .bonus, .proof, .for-who, .faq { padding: 56px 0; }
+  .final-cta { padding: 64px 0; }
+  .contrast-price { font-size: 52px; }
+  .mockup-visual { padding: 36px 24px; }
+  .bonus-card { padding: 36px 20px; }
+  .bonus-items { gap: 12px; }
+  .bonus-item { padding: 7px 16px; font-size: 12px; }
+  .category-num { font-size: 20px; }
+  .category-desc { padding-left: 30px; }
+  .section-tag, .hero-tag { font-size: 10px; }
 }
 `;
 const BODY_HTML = `
