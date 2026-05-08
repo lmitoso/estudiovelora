@@ -535,12 +535,18 @@ footer p {
   .contrast-grid, .product-grid, .for-grid { grid-template-columns: 1fr; gap: 40px; }
   .grid-showcase { grid-template-columns: 1fr 1fr; gap: 6px; }
   .grid-showcase img { height: 240px; }
-  .steps { grid-template-columns: 1fr; gap: 32px; margin-top: 32px; }
+  .steps { grid-template-columns: 1fr; gap: 28px; margin-top: 32px; }
+  .step-num { font-size: 40px; margin-bottom: 8px; }
+  .step-title { font-size: 15px; }
+  .step-desc { font-size: 13.5px; }
   .proof-grid { grid-template-columns: 1fr; max-width: 420px; margin-left: auto; margin-right: auto; gap: 16px; }
   .hero { min-height: auto; }
-  .hero-content { padding: 110px 0 70px; }
-  .hero-overlay { background: linear-gradient(180deg, rgba(8,8,8,0.85) 0%, rgba(8,8,8,0.92) 100%); }
-  .hero p { font-size: 15px; }
+  .hero-bg { opacity: 0.18; }
+  .hero-overlay { background: linear-gradient(180deg, rgba(8,8,8,0.88) 0%, rgba(8,8,8,0.94) 100%); }
+  .hero-content { padding: 100px 0 64px; }
+  .hero-tag { margin-bottom: 20px; font-size: 10.5px; }
+  .hero h1 { font-size: clamp(30px, 6.4vw, 40px); margin-bottom: 20px; }
+  .hero p { font-size: 15px; margin-bottom: 32px; line-height: 1.7; }
   .contrast, .showcase, .product, .how, .bonus, .proof, .for-who, .faq { padding: 64px 0; }
   .final-cta { padding: 72px 0; }
   .contrast-right { margin-top: 32px; }
@@ -553,9 +559,14 @@ footer p {
   .container { padding: 0 20px; }
   .grid-showcase { grid-template-columns: 1fr; gap: 8px; }
   .grid-showcase img { height: 320px; }
-  .hero h1 { font-size: 32px; }
-  .hero p { font-size: 14.5px; line-height: 1.7; }
-  .hero-content { padding: 100px 0 60px; }
+  .hero-content { padding: 92px 0 56px; }
+  .hero-tag { margin-bottom: 18px; }
+  .hero h1 { font-size: 30px; line-height: 1.18; margin-bottom: 18px; }
+  .hero p { font-size: 14.5px; margin-bottom: 28px; line-height: 1.7; }
+  .steps { gap: 24px; margin-top: 28px; }
+  .step-num { font-size: 36px; margin-bottom: 6px; }
+  .step-title { font-size: 14.5px; margin-bottom: 6px; }
+  .step-desc { font-size: 13px; line-height: 1.65; }
   .contrast, .showcase, .product, .how, .bonus, .proof, .for-who, .faq { padding: 56px 0; }
   .final-cta { padding: 64px 0; }
   .contrast-price { font-size: 52px; }
