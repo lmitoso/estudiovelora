@@ -72,42 +72,43 @@ a { color: var(--gold); text-decoration: none; }
 .hero-content {
   position: relative; z-index: 2;
   max-width: 680px;
-  padding: 80px 0;
+  padding: var(--hero-pad-top) 0 var(--hero-pad-bottom);
 }
 .hero-tag {
   font-family: var(--sans);
-  font-size: 11px;
+  font-size: var(--hero-tag-size);
   letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--gold);
-  margin-bottom: 24px;
+  margin-bottom: var(--hero-tag-mb);
 }
 .hero h1 {
   font-family: var(--serif);
-  font-size: clamp(32px, 5vw, 52px);
+  font-size: var(--hero-h1-size);
   font-weight: 300;
   color: var(--white);
-  line-height: 1.15;
-  margin-bottom: 24px;
+  line-height: var(--hero-h1-lh);
+  margin-bottom: var(--hero-h1-mb);
 }
 .hero h1 span { color: var(--gold); }
 .hero p {
-  font-size: 16px;
+  font-size: var(--hero-p-size);
   color: var(--text);
   max-width: 540px;
-  margin-bottom: 40px;
-  line-height: 1.8;
+  margin-bottom: var(--hero-p-mb);
+  line-height: var(--hero-p-lh);
 }
 .cta {
   display: inline-block;
   background: var(--gold);
   color: #080808;
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: var(--cta-font-size);
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--cta-letter);
   text-transform: uppercase;
-  padding: 18px 48px;
+  padding: var(--cta-pad-y) var(--cta-pad-x);
+  margin-top: var(--cta-mt);
   border: none;
   cursor: pointer;
   transition: all 0.3s ease;
