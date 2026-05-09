@@ -560,45 +560,75 @@ footer p {
   .final-cta { padding: 90px 0; }
   .product-grid { gap: 48px; }
   .grid-showcase img { height: 280px; }
-  .steps { gap: 32px; }
+  :root { --steps-gap: 32px; }
 }
+
+/* ===== Tablet & abaixo ===== */
 @media (max-width: 768px) {
+  :root {
+    --hero-pad-top: 100px;
+    --hero-pad-bottom: 64px;
+    --hero-tag-size: 10.5px;
+    --hero-tag-mb: 20px;
+    --hero-h1-size: clamp(30px, 6.4vw, 40px);
+    --hero-h1-mb: 20px;
+    --hero-p-size: 15px;
+    --hero-p-lh: 1.7;
+    --hero-p-mb: 32px;
+    --steps-gap: 28px;
+    --steps-mt: 32px;
+    --step-num-size: 40px;
+    --step-num-mb: 8px;
+    --step-title-size: 15px;
+    --step-desc-size: 13.5px;
+    --cta-pad-x: 24px;
+  }
   .container { padding: 0 24px; }
   .contrast-grid, .product-grid, .for-grid { grid-template-columns: 1fr; gap: 40px; }
   .grid-showcase { grid-template-columns: 1fr 1fr; gap: 6px; }
   .grid-showcase img { height: 240px; }
-  .steps { grid-template-columns: 1fr; gap: 28px; margin-top: 32px; }
-  .step-num { font-size: 40px; margin-bottom: 8px; }
-  .step-title { font-size: 15px; }
-  .step-desc { font-size: 13.5px; }
+  .steps { grid-template-columns: 1fr; }
   .proof-grid { grid-template-columns: 1fr; max-width: 420px; margin-left: auto; margin-right: auto; gap: 16px; }
   .hero { min-height: auto; }
   .hero-bg { opacity: 0.18; }
   .hero-overlay { background: linear-gradient(180deg, rgba(8,8,8,0.88) 0%, rgba(8,8,8,0.94) 100%); }
-  .hero-content { padding: 100px 0 64px; }
-  .hero-tag { margin-bottom: 20px; font-size: 10.5px; }
-  .hero h1 { font-size: clamp(30px, 6.4vw, 40px); margin-bottom: 20px; }
-  .hero p { font-size: 15px; margin-bottom: 32px; line-height: 1.7; }
   .contrast, .showcase, .product, .how, .bonus, .proof, .for-who, .faq { padding: 64px 0; }
   .final-cta { padding: 72px 0; }
   .contrast-right { margin-top: 32px; }
   .contrast-price { font-size: 60px; }
   .bonus-card { padding: 40px 24px; }
   .section-sub { margin-bottom: 36px; }
-  .cta { display: block; width: 100%; padding: 18px 24px; text-align: center; }
+  .cta { display: block; width: 100%; text-align: center; min-height: 52px; }
 }
+
+/* ===== Mobile padrão (≤480px) ===== */
 @media (max-width: 480px) {
+  :root {
+    --hero-pad-top: 92px;
+    --hero-pad-bottom: 56px;
+    --hero-tag-size: 10px;
+    --hero-tag-mb: 18px;
+    --hero-h1-size: 30px;
+    --hero-h1-lh: 1.18;
+    --hero-h1-mb: 18px;
+    --hero-p-size: 14.5px;
+    --hero-p-mb: 28px;
+    --steps-gap: 24px;
+    --steps-mt: 28px;
+    --step-num-size: 36px;
+    --step-num-mb: 6px;
+    --step-title-size: 14.5px;
+    --step-title-mb: 6px;
+    --step-desc-size: 13px;
+    --step-desc-lh: 1.65;
+    --cta-font-size: 12.5px;
+    --cta-pad-y: 17px;
+    --cta-letter: 0.14em;
+    --cta-mt: 4px;
+  }
   .container { padding: 0 20px; }
   .grid-showcase { grid-template-columns: 1fr; gap: 8px; }
   .grid-showcase img { height: 320px; }
-  .hero-content { padding: 92px 0 56px; }
-  .hero-tag { margin-bottom: 18px; }
-  .hero h1 { font-size: 30px; line-height: 1.18; margin-bottom: 18px; }
-  .hero p { font-size: 14.5px; margin-bottom: 28px; line-height: 1.7; }
-  .steps { gap: 24px; margin-top: 28px; }
-  .step-num { font-size: 36px; margin-bottom: 6px; }
-  .step-title { font-size: 14.5px; margin-bottom: 6px; }
-  .step-desc { font-size: 13px; line-height: 1.65; }
   .contrast, .showcase, .product, .how, .bonus, .proof, .for-who, .faq { padding: 56px 0; }
   .final-cta { padding: 64px 0; }
   .contrast-price { font-size: 52px; }
@@ -608,7 +638,60 @@ footer p {
   .bonus-item { padding: 7px 16px; font-size: 12px; }
   .category-num { font-size: 20px; }
   .category-desc { padding-left: 30px; }
-  .section-tag, .hero-tag { font-size: 10px; }
+  .section-tag { font-size: 10px; }
+}
+
+/* ===== iPhone padrão (≤414px) ===== */
+@media (max-width: 414px) {
+  :root {
+    --hero-pad-top: 88px;
+    --hero-pad-bottom: 52px;
+    --hero-h1-size: 28px;
+    --hero-h1-mb: 16px;
+    --hero-p-size: 14px;
+    --hero-p-mb: 26px;
+    --steps-gap: 22px;
+    --step-num-size: 34px;
+    --cta-pad-y: 16px;
+  }
+  .container { padding: 0 18px; }
+}
+
+/* ===== iPhone SE / pequenos (≤375px) ===== */
+@media (max-width: 375px) {
+  :root {
+    --hero-pad-top: 80px;
+    --hero-pad-bottom: 48px;
+    --hero-tag-size: 9.5px;
+    --hero-tag-mb: 16px;
+    --hero-h1-size: 26px;
+    --hero-h1-lh: 1.2;
+    --hero-h1-mb: 16px;
+    --hero-p-size: 13.5px;
+    --hero-p-lh: 1.65;
+    --hero-p-mb: 24px;
+    --steps-gap: 20px;
+    --steps-mt: 24px;
+    --step-num-size: 32px;
+    --step-title-size: 14px;
+    --step-desc-size: 12.5px;
+    --cta-font-size: 12px;
+    --cta-pad-y: 15px;
+  }
+  .container { padding: 0 16px; }
+  .contrast-price { font-size: 46px; }
+}
+
+/* ===== Galaxy / pequenos extras (≤360px) ===== */
+@media (max-width: 360px) {
+  :root {
+    --hero-h1-size: 25px;
+    --hero-p-size: 13px;
+    --step-num-size: 30px;
+    --cta-font-size: 11.5px;
+    --cta-letter: 0.12em;
+  }
+  .container { padding: 0 14px; }
 }
 `;
 const BODY_HTML = `
