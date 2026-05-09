@@ -326,26 +326,29 @@ a { color: var(--gold); text-decoration: none; }
 .steps {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 48px;
-  margin-top: 48px;
+  gap: var(--steps-gap);
+  margin-top: var(--steps-mt);
 }
+.step { padding: var(--step-pad-y) 0; }
 .step-num {
   font-family: var(--serif);
-  font-size: 48px;
+  font-size: var(--step-num-size);
   color: var(--gold);
   opacity: 0.6;
-  margin-bottom: 12px;
+  margin-bottom: var(--step-num-mb);
+  line-height: 1;
 }
 .step-title {
-  font-size: 16px;
+  font-size: var(--step-title-size);
   font-weight: 500;
   color: var(--white);
-  margin-bottom: 8px;
+  margin-bottom: var(--step-title-mb);
+  line-height: 1.35;
 }
 .step-desc {
-  font-size: 14px;
+  font-size: var(--step-desc-size);
   color: var(--text-muted);
-  line-height: 1.7;
+  line-height: var(--step-desc-lh);
 }
 
 /* ===== BONUS ===== */
