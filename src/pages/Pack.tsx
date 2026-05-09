@@ -14,6 +14,34 @@ const STYLE = `
   --white: #FAFAF7;
   --serif: 'Cormorant Garamond', Georgia, serif;
   --sans: 'Raleway', sans-serif;
+
+  /* === Tipografia tunável (hero / steps / cta) === */
+  --hero-tag-size: 11px;
+  --hero-tag-mb: 24px;
+  --hero-h1-size: clamp(32px, 5vw, 52px);
+  --hero-h1-lh: 1.15;
+  --hero-h1-mb: 24px;
+  --hero-p-size: 16px;
+  --hero-p-lh: 1.8;
+  --hero-p-mb: 40px;
+  --hero-pad-top: 80px;
+  --hero-pad-bottom: 80px;
+
+  --step-num-size: 48px;
+  --step-num-mb: 12px;
+  --step-title-size: 16px;
+  --step-title-mb: 8px;
+  --step-desc-size: 14px;
+  --step-desc-lh: 1.7;
+  --steps-gap: 48px;
+  --steps-mt: 48px;
+  --step-pad-y: 0px;
+
+  --cta-font-size: 13px;
+  --cta-pad-y: 18px;
+  --cta-pad-x: 48px;
+  --cta-letter: 0.12em;
+  --cta-mt: 0px;
 }
 
 html { scroll-behavior: smooth; }
