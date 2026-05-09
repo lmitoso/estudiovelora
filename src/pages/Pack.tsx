@@ -978,6 +978,15 @@ const Pack = () => {
     document.head.appendChild(link);
     const prevTitle = document.title;
     document.title = "Pack Editorial Velora — 50 Prompts para Campanhas com IA";
+
+    // Meta Pixel — ViewContent for Pack
+    fbqTrack("ViewContent", {
+      content_name: "Pack 50 Prompts",
+      content_type: "product",
+      value: 37.0,
+      currency: "BRL",
+    });
+
     return () => {
       document.head.removeChild(link);
       document.title = prevTitle;
